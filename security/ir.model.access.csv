@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ar_scrap_product_user,ar.scrap.product user,model_ar_scrap_product,base.group_user,1,1,1,0
+access_ar_scrap_zone_user,ar.scrap.zone user,model_ar_scrap_zone,base.group_user,1,1,1,0
+access_ar_scrap_validation_rule_user,ar.scrap.validation.rule user,model_ar_scrap_validation_rule,base.group_user,1,1,1,0
+access_ar_scrap_approval_history_user,ar.scrap.approval.history user,model_ar_scrap_approval_history,base.group_user,1,0,0,0
+access_ar_scrap_order_user,ar.scrap.order user,model_ar_scrap_order,base.group_user,1,0,1,0
+access_ar_scrap_order_line_user,ar.scrap.order.line user,model_ar_scrap_order_line,base.group_user,1,0,1,0
+access_ar_scrap_documentation_user,ar.scrap.documentation user,model_ar_scrap_documentation,base.group_user,1,1,1,1
+access_ar_scrap_approval_wizard_user,ar.scrap.approval.wizard user,model_ar_scrap_approval_wizard,base.group_user,1,1,1,1

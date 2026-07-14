@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_ar_scrap_order" model="ir.sequence">
+        <field name="name">Opération AR - Scrap</field>
+        <field name="code">ar.scrap.order</field>
+        <field name="prefix">PROD-SCRAP-</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

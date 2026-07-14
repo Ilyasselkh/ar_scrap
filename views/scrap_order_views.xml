@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ar_scrap_order_list" model="ir.ui.view">
+        <field name="name">ar.scrap.order.list</field>
+        <field name="model">ar.scrap.order</field>
+        <field name="arch" type="xml">
+            <list string="Archive des scraps" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="scrap_date"/>
+                <field name="shift"/>
+                <field name="state" widget="badge" decoration-success="state == 'validated'" decoration-danger="state == 'refused'" decoration-warning="state not in ('validated', 'refused')"/>
+                <field name="validated_at"/>
+                <field name="user_id"/>
+                <field name="total_quantity" sum="Total"/>
+                <field name="total_length" sum="Total"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="total_amount" widget="monetary" sum="Total"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ar_scrap_order_form" model="ir.ui.view">
+        <field name="name">ar.scrap.order.form</field>
+        <field name="model">ar.scrap.order</field>
+        <field name="arch" type="xml">
+            <form string="Opération de scrap" create="false" edit="false" delete="false" class="ar_scrap_order_form">
+                <header>
+                    <button name="action_approve" type="object" string="Valider" icon="fa-check" class="btn-success ar_scrap_approve_btn" invisible="not can_current_user_approve"/>
+                    <button name="action_refuse" type="object" string="Refuser" icon="fa-times" class="btn-danger ar_scrap_refuse_btn" invisible="not can_current_user_approve"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending_supervisor,pending_manager,pending_md,validated,refused"/>
+                </header>
+                <sheet class="ar_scrap_order_sheet">
+                    <field name="can_current_user_approve" invisible="True"/>
+                    <field name="currency_id" invisible="True"/>
+                    <div class="ar_scrap_order_hero">
+                        <div>
+                            <span class="ar_scrap_order_eyebrow">Opération de scrap</span>
+                            <h1><field name="name" nolabel="1"/></h1>
+                            <p>Suivi de la déclaration et de son circuit de validation</p>
+                        </div>
+                        <div class="ar_scrap_order_status">
+                            <span>Statut actuel</span>
+                            <field name="state" widget="badge" nolabel="1"
+                                   decoration-success="state == 'validated'"
+                                   decoration-danger="state == 'refused'"
+                                   decoration-warning="state not in ('validated', 'refused')"/>
+                        </div>
+                    </div>
+
+                    <div class="ar_scrap_info_grid">
+                        <div class="ar_scrap_info_card">
+                            <i class="fa fa-calendar"/>
+                            <div><span>Date et heure</span><strong><field name="scrap_date" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card">
+                            <i class="fa fa-users"/>
+                            <div><span>Shift</span><strong><field name="shift" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card">
+                            <i class="fa fa-user"/>
+                            <div><span>Déclaré par</span><strong><field name="user_id" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card">
+                            <i class="fa fa-clock-o"/>
+                            <div><span>Date de validation</span><strong><field name="validated_at" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card ar_scrap_info_card_accent">
+                            <i class="fa fa-cubes"/>
+                            <div><span>Quantité totale</span><strong><field name="total_quantity" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card ar_scrap_info_card_accent">
+                            <i class="fa fa-arrows-h"/>
+                            <div><span>Longueur totale</span><strong><field name="total_length" nolabel="1"/></strong></div>
+                        </div>
+                        <div class="ar_scrap_info_card ar_scrap_info_card_amount">
+                            <i class="fa fa-money"/>
+                            <div><span>Montant total</span><strong><field name="total_amount" widget="monetary" nolabel="1"/></strong></div>
+                        </div>
+                    </div>
+
+                    <div class="ar_scrap_order_notes" invisible="not notes">
+                        <div class="ar_scrap_section_header">
+                            <div><i class="fa fa-comment-o"/><span>Remarques</span></div>
+                        </div>
+                        <field name="notes" nolabel="1" readonly="True"/>
+                    </div>
+
+                    <div class="ar_scrap_order_notes ar_scrap_refusal_reason" invisible="not refusal_reason">
+                        <div class="ar_scrap_section_header">
+                            <div><i class="fa fa-ban"/><span>Motif de refus</span></div>
+                        </div>
+                        <field name="refusal_reason" nolabel="1" readonly="True"/>
+                    </div>
+
+                    <div class="ar_scrap_section_header">
+                        <div><i class="fa fa-list-ul"/><span>Références scrapées</span></div>
+                        <small>Détail des quantités déclarées</small>
+                    </div>
+                    <field name="line_ids" nolabel="1" class="ar_scrap_order_lines">
+                        <list create="false" edit="false" delete="false">
+                            <field name="currency_id" column_invisible="True"/>
+                            <field name="product_name"/>
+                            <field name="product_description" optional="show"/>
+                            <field name="product_length"/>
+                            <field name="quantity"/>
+                            <field name="total_length"/>
+                            <field name="unit_price" widget="monetary"/>
+                            <field name="total_amount" widget="monetary"/>
+                        </list>
+                    </field>
+
+                    <div class="ar_scrap_section_header ar_scrap_history_header">
+                        <div><i class="fa fa-check-square-o"/><span>Historique des validations</span></div>
+                        <small>Traçabilité des décisions</small>
+                    </div>
+                    <field name="approval_history_ids" nolabel="1" class="ar_scrap_approval_history">
+                        <list create="false" edit="false" delete="false">
+                            <field name="decision_date"/>
+                            <field name="level"/>
+                            <field name="validator_id"/>
+                            <field name="decision" widget="badge" decoration-success="decision == 'approved'" decoration-danger="decision == 'refused'"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ar_scrap_order_search" model="ir.ui.view">
+        <field name="name">ar.scrap.order.search</field>
+        <field name="model">ar.scrap.order</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher dans l'archive">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="shift"/>
+                <field name="scrap_date"/>
+                <field name="validated_at"/>
+                <filter name="my_operations" string="Mes opérations" domain="[('user_id', '=', uid)]"/>
+                <group>
+                    <filter name="group_user" string="Utilisateur" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_shift" string="Shift" context="{'group_by': 'shift'}"/>
+                    <filter name="group_scrap_date" string="Date et heure" context="{'group_by': 'scrap_date'}"/>
+                    <filter name="group_date" string="Date de validation" context="{'group_by': 'validated_at'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ar_scrap_order_archive" model="ir.actions.act_window">
+        <field name="name">Archive</field>
+        <field name="res_model">ar.scrap.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ('validated', 'refused'))]</field>
+        <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+    </record>
+
+    <record id="action_ar_scrap_order_validation" model="ir.actions.act_window">
+        <field name="name">Validations</field>
+        <field name="res_model">ar.scrap.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            '|', '|', '|',
+            '&amp;', ('user_id', '=', uid), ('state', 'in', ('pending_supervisor', 'pending_manager', 'pending_md')),
+            '&amp;', ('state', '=', 'pending_supervisor'), ('supervisor_validator_ids', 'in', [uid]),
+            '&amp;', ('state', '=', 'pending_manager'), ('manager_validator_ids', 'in', [uid]),
+            '&amp;', ('state', '=', 'pending_md'), ('md_validator_ids', 'in', [uid])
+        ]</field>
+        <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+    </record>
+</odoo>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ar_scrap_approval_wizard_form" model="ir.ui.view">
+        <field name="name">ar.scrap.approval.wizard.form</field>
+        <field name="model">ar.scrap.approval.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Confirmation">
+                <field name="decision" invisible="True"/>
+                <field name="order_id" invisible="True"/>
+
+                <div class="ar_scrap_confirmation ar_scrap_confirmation_approve" invisible="decision != 'approve'">
+                    <i class="fa fa-check-circle"/>
+                    <div>
+                        <h3>Confirmer la validation</h3>
+                        <p>Voulez-vous vraiment valider la déclaration <strong><field name="order_id" nolabel="1"/></strong> ?</p>
+                    </div>
+                </div>
+
+                <div class="ar_scrap_confirmation ar_scrap_confirmation_refuse" invisible="decision != 'refuse'">
+                    <i class="fa fa-exclamation-triangle"/>
+                    <div>
+                        <h3>Confirmer le refus</h3>
+                        <p>Le refus de cette déclaration nécessite obligatoirement un motif.</p>
+                    </div>
+                </div>
+                <group invisible="decision != 'refuse'">
+                    <field name="refusal_reason"
+                           placeholder="Expliquez clairement le motif du refus..."
+                           required="decision == 'refuse'"/>
+                </group>
+
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirmer la validation"
+                            class="btn-success" invisible="decision != 'approve'"/>
+                    <button name="action_confirm" type="object" string="Confirmer le refus"
+                            class="btn-danger" invisible="decision != 'refuse'"/>
+                    <button string="Annuler" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

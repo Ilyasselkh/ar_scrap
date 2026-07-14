@@ -1,0 +1,175 @@
+.ar_scrap_cart_app {
+    --ar-purple: #714b67;
+    --ar-teal: #00a09d;
+    --ar-ink: #263143;
+    display: grid;
+    grid-template-columns: minmax(320px, 38%) 1fr;
+    height: calc(100vh - 46px);
+    min-height: 560px;
+    overflow: hidden;
+    color: var(--ar-ink);
+    background: #edf1f5;
+}
+.ar_scrap_cart_panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 24px;
+    background: #fff;
+    border-right: 1px solid #dfe4ea;
+    box-shadow: 10px 0 28px rgba(24, 35, 52, .07);
+    z-index: 2;
+}
+.ar_scrap_cart_header, .ar_scrap_catalog_header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.ar_scrap_cart_header h2, .ar_scrap_catalog_header h1 { margin: 3px 0 0; font-weight: 800; }
+.ar_scrap_cart_header h2 { font-size: 24px; }
+.ar_scrap_catalog_header h1 { font-size: 29px; }
+.ar_scrap_catalog_header p { margin: 7px 0 0; color: #6b7586; }
+.ar_scrap_eyebrow { color: var(--ar-teal); font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.ar_scrap_clear, .ar_scrap_remove { border: 0; color: #8b4351; background: #fff0f2; border-radius: 8px; }
+.ar_scrap_clear { padding: 7px 10px; }
+.ar_scrap_remove { width: 29px; height: 29px; }
+.ar_scrap_operation_fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, .8fr); gap: 10px; margin-top: 18px; padding: 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_operation_fields label { min-width: 0; margin: 0; }
+.ar_scrap_operation_fields label > span { display: block; margin: 0 0 6px 2px; color: #596577; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_operation_fields select,
+.ar_scrap_operation_fields input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd3dd; border-radius: 8px; outline: 0; color: var(--ar-ink); background: white; font-weight: 600; }
+.ar_scrap_operation_fields select:focus,
+.ar_scrap_operation_fields input:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .12); }
+.ar_scrap_notes_field { display: block; margin: 10px 0 0; padding: 11px 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_notes_field > span { display: block; margin: 0 0 6px 2px; color: #596577; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_notes_field > span small { color: #929baa; font-size: 10px; font-weight: 600; text-transform: none; }
+.ar_scrap_notes_field textarea { display: block; width: 100%; min-height: 58px; max-height: 100px; padding: 9px 10px; resize: vertical; border: 1px solid #cbd3dd; border-radius: 8px; outline: 0; color: var(--ar-ink); background: #fff; }
+.ar_scrap_notes_field textarea:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .12); }
+.ar_scrap_empty_cart, .ar_scrap_catalog_state { display: flex; flex: 1; flex-direction: column; justify-content: center; align-items: center; gap: 8px; color: #7b8492; text-align: center; }
+.ar_scrap_empty_cart > i, .ar_scrap_catalog_state > i { font-size: 42px; color: #c4cad3; margin-bottom: 7px; }
+.ar_scrap_cart_lines { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 22px -8px 16px 0; padding-right: 8px; scrollbar-gutter: stable; }
+.ar_scrap_cart_line { padding: 14px; margin-bottom: 10px; border: 1px solid #e2e7ed; border-radius: 12px; background: #fafbfc; }
+.ar_scrap_line_top { display: flex; justify-content: space-between; gap: 12px; }
+.ar_scrap_line_top strong, .ar_scrap_line_top small { display: block; }
+.ar_scrap_line_top small { margin-top: 3px; color: #7b8492; }
+.ar_scrap_line_top .ar_scrap_cart_unit_price { color: #087f67; font-weight: 800; }
+.ar_scrap_sap_badge { display: inline-flex !important; align-items: center; align-self: flex-start; gap: 4px; width: fit-content; margin-top: 5px !important; padding: 3px 7px; border-radius: 10px; font-size: 10px !important; font-weight: 800; line-height: 1.2; }
+.ar_scrap_sap_badge.is-sap { color: #117442 !important; background: #ddf5e7; }
+.ar_scrap_sap_badge.is-non-sap { color: #8a5a16 !important; background: #fff0d5; }
+.ar_scrap_qty_row { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+.ar_scrap_qty_row button { width: 32px; height: 32px; border: 1px solid #d4dae2; border-radius: 7px; background: white; font-size: 18px; }
+.ar_scrap_qty_row input { width: 86px; height: 32px; border: 1px solid #cbd3dd; border-radius: 7px; text-align: center; font-weight: 700; }
+.ar_scrap_line_total { margin-left: auto; color: var(--ar-purple); font-size: 12px; font-weight: 700; }
+.ar_scrap_line_amount { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #d8dee6; color: #687486; font-size: 12px; }
+.ar_scrap_line_amount strong { color: #087f67; font-size: 13px; }
+.ar_scrap_summary { padding: 16px; border-radius: 12px; background: #f1f4f7; }
+.ar_scrap_summary > div { display: flex; justify-content: space-between; margin-bottom: 7px; color: #626d7e; }
+.ar_scrap_summary > div:last-child { margin-bottom: 0; }
+.ar_scrap_summary strong { color: var(--ar-ink); }
+.ar_scrap_summary .ar_scrap_summary_amount { margin: 11px -5px -5px; padding: 11px 5px 5px; border-top: 1px solid #d3dae3; color: #087f67; font-size: 14px; font-weight: 800; }
+.ar_scrap_summary .ar_scrap_summary_amount strong { color: #087f67; font-size: 16px; }
+.ar_scrap_validate { width: 100%; min-height: 50px; margin-top: 12px; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(135deg, var(--ar-purple), var(--ar-teal)); font-size: 16px; font-weight: 800; box-shadow: 0 12px 25px rgba(0, 160, 157, .2); }
+.ar_scrap_validate:disabled { opacity: .45; box-shadow: none; }
+.ar_scrap_catalog { overflow: auto; padding: 27px 30px 40px; }
+.ar_scrap_catalog_filters { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.ar_scrap_zone_filter { display: flex; align-items: center; min-width: 190px; height: 44px; padding: 0 12px; border: 1px solid #d4dae3; border-radius: 22px; background: white; box-shadow: 0 7px 20px rgba(35, 45, 61, .06); }
+.ar_scrap_sap_filter { display: flex; align-items: center; min-width: 205px; height: 44px; padding: 0 12px; border: 1px solid #d4dae3; border-radius: 22px; background: white; box-shadow: 0 7px 20px rgba(35, 45, 61, .06); }
+.ar_scrap_zone_filter i { color: var(--ar-teal); }
+.ar_scrap_sap_filter i { color: var(--ar-purple); }
+.ar_scrap_zone_filter select { width: 100%; margin-left: 8px; border: 0; outline: 0; color: #495466; background: transparent; font-weight: 600; }
+.ar_scrap_sap_filter select { width: 100%; margin-left: 8px; border: 0; outline: 0; color: #495466; background: transparent; font-weight: 600; }
+.ar_scrap_search { display: flex; align-items: center; min-width: 280px; height: 44px; padding: 0 14px; border: 1px solid #d4dae3; border-radius: 22px; background: white; box-shadow: 0 7px 20px rgba(35, 45, 61, .06); }
+.ar_scrap_search i { color: #8b94a2; }
+.ar_scrap_search input { width: 100%; margin-left: 9px; border: 0; outline: 0; background: transparent; }
+.ar_scrap_product_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 17px; margin-top: 27px; }
+.ar_scrap_product_card { position: relative; display: flex; flex-direction: column; overflow: hidden; height: 380px; padding: 0; border: 1px solid #dfe4ea; border-radius: 13px; background: white; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(31, 43, 59, .07); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.ar_scrap_product_card:hover { transform: translateY(-4px); border-color: rgba(0, 160, 157, .55); box-shadow: 0 15px 30px rgba(31, 43, 59, .13); }
+.ar_scrap_product_image { position: relative; display: flex; align-items: center; justify-content: center; height: 145px; background: linear-gradient(145deg, #f8fafb, #eef2f5); }
+.ar_scrap_product_image img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+.ar_scrap_product_image > i { color: #c6cdd7; font-size: 48px; }
+.ar_scrap_length { position: absolute; top: 9px; right: 9px; padding: 4px 7px; border-radius: 6px; color: white; background: var(--ar-purple); font-size: 11px; font-weight: 800; }
+.ar_scrap_product_info { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 13px 14px 15px; }
+.ar_scrap_product_info > strong { display: -webkit-box; min-height: 36px; max-height: 36px; overflow: hidden; font-size: 15px; line-height: 18px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ar_scrap_product_zone { display: block; margin-top: 5px; color: var(--ar-purple); font-size: 11px; font-weight: 700; }
+.ar_scrap_product_price { display: block; margin-top: 4px; color: #087f67; font-size: 12px; font-weight: 800; }
+.ar_scrap_product_info p { display: -webkit-box; height: 36px; min-height: 36px; overflow: hidden; margin: 5px 0 5px; color: #77808f; font-size: 12px; line-height: 18px; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ar_scrap_description_button { align-self: flex-start; padding: 2px 0; border: 0; color: var(--ar-purple); background: transparent; font-size: 11px; font-weight: 800; }
+.ar_scrap_description_button:hover { color: var(--ar-teal); text-decoration: underline; }
+.ar_scrap_product_info span { color: var(--ar-teal); font-size: 12px; font-weight: 800; }
+.ar_scrap_product_info > span:last-child { margin-top: auto; padding-top: 5px; }
+.ar_scrap_cart_badge { position: absolute; top: 9px; left: 9px; min-width: 25px; height: 25px; padding: 0 7px; border-radius: 13px; color: white; background: var(--ar-teal); line-height: 25px; text-align: center; font-weight: 800; box-shadow: 0 4px 10px rgba(0, 160, 157, .28); }
+.ar_scrap_description_overlay { position: fixed; inset: 46px 0 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(25, 33, 45, .52); backdrop-filter: blur(3px); z-index: 1050; }
+.ar_scrap_description_modal { width: 100%; max-width: 560px; max-height: calc(100vh - 100px); overflow: hidden; border-radius: 15px; background: white; box-shadow: 0 28px 70px rgba(15, 23, 42, .28); cursor: default; }
+.ar_scrap_description_modal header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 22px 16px; border-bottom: 1px solid #e4e8ed; }
+.ar_scrap_description_modal h3 { margin: 4px 0 0; color: var(--ar-ink); font-size: 21px; font-weight: 800; }
+.ar_scrap_description_modal header button { flex: 0 0 34px; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #667085; background: #f0f2f5; }
+.ar_scrap_description_content { max-height: calc(100vh - 210px); overflow: auto; padding: 20px 22px 24px; color: #4c5869; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Modern operation form */
+.ar_scrap_order_form .ar_scrap_approve_btn { border-color: #16834f !important; color: #fff !important; background: #16834f !important; box-shadow: 0 5px 12px rgba(22, 131, 79, .22); }
+.ar_scrap_order_form .ar_scrap_approve_btn:hover { border-color: #106b40 !important; background: #106b40 !important; }
+.ar_scrap_order_form .ar_scrap_refuse_btn { border-color: #d63b4b !important; color: #fff !important; background: #d63b4b !important; box-shadow: 0 5px 12px rgba(214, 59, 75, .2); }
+.ar_scrap_order_form .ar_scrap_refuse_btn:hover { border-color: #b82d3c !important; background: #b82d3c !important; }
+.ar_scrap_order_form .ar_scrap_order_sheet { max-width: none; width: calc(100% - 32px); padding: 0 24px 30px; border: 0; border-radius: 16px; background: #f6f8fb; box-shadow: 0 14px 38px rgba(31, 43, 59, .08); }
+.ar_scrap_order_hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 -24px 24px; padding: 26px 30px; border-radius: 16px 16px 0 0; color: #fff; background: linear-gradient(125deg, #57384f 0%, #714b67 52%, #008e8b 100%); overflow: hidden; }
+.ar_scrap_order_hero h1 { margin: 4px 0 0; color: #fff; font-size: 30px; font-weight: 800; }
+.ar_scrap_order_hero h1 .o_field_widget { color: inherit; }
+.ar_scrap_order_hero p { margin: 7px 0 0; color: rgba(255, 255, 255, .76); font-size: 13px; }
+.ar_scrap_order_eyebrow { display: block; color: #89eeea; font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+.ar_scrap_order_status { flex: 0 0 auto; min-width: 190px; padding: 13px 16px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px; background: rgba(255, 255, 255, .1); backdrop-filter: blur(5px); }
+.ar_scrap_order_status > span { display: block; margin-bottom: 7px; color: rgba(255, 255, 255, .72); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ar_scrap_order_status .o_field_widget { color: #fff; font-size: 13px; font-weight: 800; }
+.ar_scrap_info_grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 26px; }
+.ar_scrap_info_card { display: flex; align-items: center; min-height: 82px; padding: 15px 16px; border: 1px solid #e1e6ed; border-radius: 12px; background: #fff; box-shadow: 0 7px 18px rgba(31, 43, 59, .05); }
+.ar_scrap_info_card > i { display: flex; flex: 0 0 38px; align-items: center; justify-content: center; width: 38px; height: 38px; margin-right: 12px; border-radius: 10px; color: #714b67; background: #f1eaf0; font-size: 17px; }
+.ar_scrap_info_card > div { min-width: 0; }
+.ar_scrap_info_card span { display: block; margin-bottom: 5px; color: #7b8492; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.ar_scrap_info_card strong { display: block; overflow: hidden; color: #273245; font-size: 14px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ar_scrap_info_card strong .o_field_widget { color: inherit; font-weight: inherit; }
+.ar_scrap_info_card_accent { border-color: rgba(0, 160, 157, .24); background: linear-gradient(145deg, #fff, #effbfa); }
+.ar_scrap_info_card_accent > i { color: #007f7c; background: #d9f5f3; }
+.ar_scrap_info_card_amount { border-color: rgba(22, 131, 79, .26); background: linear-gradient(145deg, #fff, #effaf4); }
+.ar_scrap_info_card_amount > i { color: #16834f; background: #dcf4e6; }
+.ar_scrap_info_card_rule { grid-column: span 2; }
+.ar_scrap_info_card_rule > i { color: #4763b8; background: #e9edfb; }
+.ar_scrap_section_header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 4px 0 10px; padding: 0 3px; }
+.ar_scrap_section_header > div { display: flex; align-items: center; gap: 9px; color: #273245; font-size: 15px; font-weight: 800; }
+.ar_scrap_section_header i { color: #00a09d; font-size: 16px; }
+.ar_scrap_section_header small { color: #8a94a3; font-size: 11px; }
+.ar_scrap_order_notes { margin: 0 0 24px; }
+.ar_scrap_order_notes > .o_field_widget { display: block; min-height: 58px; padding: 14px 16px; border: 1px solid #e0e5ec; border-left: 4px solid #714b67; border-radius: 10px; color: #4d5868; background: #fff; line-height: 1.55; white-space: pre-wrap; box-shadow: 0 6px 16px rgba(31, 43, 59, .04); }
+.ar_scrap_refusal_reason > .o_field_widget { border-left-color: #d63b4b; background: #fff8f8; }
+.ar_scrap_refusal_reason .ar_scrap_section_header i { color: #d63b4b; }
+.ar_scrap_confirmation { display: flex; align-items: flex-start; gap: 15px; margin: 8px 0 20px; padding: 17px 18px; border: 1px solid #dfe5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_confirmation > i { margin-top: 2px; font-size: 30px; }
+.ar_scrap_confirmation h3 { margin: 0 0 6px; color: #273245; font-size: 19px; font-weight: 800; }
+.ar_scrap_confirmation p { margin: 0; color: #667183; line-height: 1.5; }
+.ar_scrap_confirmation_approve { border-color: #bde3cc; background: #f1faf5; }
+.ar_scrap_confirmation_approve > i { color: #16834f; }
+.ar_scrap_confirmation_refuse { border-color: #f0c5ca; background: #fff5f6; }
+.ar_scrap_confirmation_refuse > i { color: #d63b4b; }
+.ar_scrap_history_header { margin-top: 28px; }
+.ar_scrap_order_lines,
+.ar_scrap_approval_history { display: block; overflow: hidden; border: 1px solid #e0e5ec; border-radius: 12px; background: #fff; box-shadow: 0 6px 16px rgba(31, 43, 59, .04); }
+.ar_scrap_order_form .o_list_table thead { background: #f0f3f7; }
+.ar_scrap_order_form .o_list_table thead th { color: #556173; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_order_form .o_list_table tbody tr:hover { background: #f5fbfb; }
+.ar_scrap_order_form .o-mail-Chatter { max-width: none; width: calc(100% - 32px); margin: 18px auto 30px; border: 1px solid #e0e5ec; border-radius: 14px; background: #fff; box-shadow: 0 10px 28px rgba(31, 43, 59, .06); }
+@media (max-width: 900px) {
+    .ar_scrap_cart_app { grid-template-columns: 1fr; height: auto; overflow: auto; }
+    .ar_scrap_cart_panel { min-height: 520px; border-right: 0; border-bottom: 1px solid #dfe4ea; }
+    .ar_scrap_catalog { overflow: visible; }
+    .ar_scrap_catalog_header { flex-direction: column; }
+    .ar_scrap_catalog_filters { width: 100%; justify-content: stretch; }
+    .ar_scrap_zone_filter { width: 100%; }
+    .ar_scrap_sap_filter { width: 100%; }
+    .ar_scrap_search { width: 100%; min-width: 0; }
+    .ar_scrap_info_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 430px) {
+    .ar_scrap_operation_fields { grid-template-columns: 1fr; }
+    .ar_scrap_order_form .ar_scrap_order_sheet { width: calc(100% - 16px); padding: 0 14px 20px; }
+    .ar_scrap_order_hero { align-items: flex-start; flex-direction: column; margin-right: -14px; margin-left: -14px; padding: 22px 18px; }
+    .ar_scrap_order_status { width: 100%; }
+    .ar_scrap_info_grid { grid-template-columns: 1fr; }
+    .ar_scrap_info_card_rule { grid-column: auto; }
+    .ar_scrap_section_header { align-items: flex-start; flex-direction: column; gap: 3px; }
+}

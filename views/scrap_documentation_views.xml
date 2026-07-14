@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ar_scrap_documentation_list" model="ir.ui.view">
+        <field name="name">ar.scrap.documentation.list</field>
+        <field name="model">ar.scrap.documentation</field>
+        <field name="arch" type="xml">
+            <list string="Documentation">
+                <field name="name"/>
+                <field name="file_name" optional="show"/>
+                <field name="link_url" widget="url" optional="show"/>
+                <field name="created_by"/>
+                <field name="created_on"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ar_scrap_documentation_form" model="ir.ui.view">
+        <field name="name">ar.scrap.documentation.form</field>
+        <field name="model">ar.scrap.documentation</field>
+        <field name="arch" type="xml">
+            <form string="Documentation scrap">
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" placeholder="Titre..."/></h1></div>
+                    <group>
+                        <field name="file_data" filename="file_name"/>
+                        <field name="file_name" invisible="True"/>
+                        <field name="link_url" widget="url" placeholder="https://..."/>
+                    </group>
+                    <field name="description" placeholder="Instructions ou contenu de la documentation..."/>
+                    <group string="Audit">
+                        <field name="created_by" readonly="True"/>
+                        <field name="created_on" readonly="True"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ar_scrap_documentation" model="ir.actions.act_window">
+        <field name="name">Documentation</field>
+        <field name="res_model">ar.scrap.documentation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

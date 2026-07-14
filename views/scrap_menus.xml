@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_ar_scrap_cart" model="ir.actions.client">
+        <field name="name">Déclaration SCRAP</field>
+        <field name="tag">ar_scrap.cart</field>
+    </record>
+
+    <menuitem id="menu_ar_scrap_root" name="AR Scrap" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_cart" name="Déclaration SCRAP" parent="menu_ar_scrap_root" action="action_ar_scrap_cart" sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_validations" name="Validations" parent="menu_ar_scrap_root" action="action_ar_scrap_order_validation" sequence="15" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_archive" name="Archive" parent="menu_ar_scrap_root" action="action_ar_scrap_order_archive" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_documentation" name="Documentation" parent="menu_ar_scrap_root" action="action_ar_scrap_documentation" sequence="30" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_settings" name="Paramétrage" parent="menu_ar_scrap_root" sequence="40" groups="base.group_user"/>
+    <record id="menu_ar_scrap_settings" model="ir.ui.menu">
+        <field name="action" eval="False"/>
+    </record>
+    <menuitem id="menu_ar_scrap_product" name="Références" parent="menu_ar_scrap_settings" action="action_ar_scrap_product" sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_zone" name="Zones de scrap" parent="menu_ar_scrap_settings" action="action_ar_scrap_zone" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_validation_rule" name="Règles de validation" parent="menu_ar_scrap_settings" action="action_ar_scrap_validation_rule" sequence="30" groups="base.group_user"/>
+</odoo>

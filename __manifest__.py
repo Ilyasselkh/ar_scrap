@@ -1,0 +1,30 @@
+{
+    "name": "AR - Scrap",
+    "version": "19.0.1.0.0",
+    "summary": "Saisie et archivage des quantités scrapées",
+    "category": "Operations",
+    "author": "AR",
+    "license": "LGPL-3",
+    "depends": ["base", "web", "mail"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/sequence.xml",
+        "data/mail_template.xml",
+        "views/scrap_zone_views.xml",
+        "views/scrap_validation_rule_views.xml",
+        "views/scrap_product_views.xml",
+        "views/scrap_approval_wizard_views.xml",
+        "views/scrap_order_views.xml",
+        "views/scrap_documentation_views.xml",
+        "views/scrap_menus.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "ar_scrap/static/src/js/scrap_cart.js",
+            "ar_scrap/static/src/xml/scrap_cart.xml",
+            "ar_scrap/static/src/scss/scrap_cart.scss",
+        ],
+    },
+    "application": True,
+    "installable": True,
+}

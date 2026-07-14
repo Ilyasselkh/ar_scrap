@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ar_scrap.Cart">
+        <div class="ar_scrap_cart_app">
+            <aside class="ar_scrap_cart_panel">
+                <div class="ar_scrap_cart_header">
+                    <div>
+                        <span class="ar_scrap_eyebrow">Opération en cours</span>
+                        <h2>Déclaration SCRAP</h2>
+                    </div>
+                    <button t-if="cartLines.length" type="button" class="ar_scrap_clear" t-on-click="clearCart" title="Vider le panier">
+                        <i class="fa fa-trash-o"/> Vider
+                    </button>
+                </div>
+
+                <div class="ar_scrap_operation_fields">
+                    <label>
+                        <span>Shift</span>
+                        <select t-att-value="state.shift" t-on-change="onShiftChange" required="required">
+                            <option value="">Sélectionner un shift...</option>
+                            <option value="team_1">Équipe 1</option>
+                            <option value="team_2">Équipe 2</option>
+                            <option value="team_3">Équipe 3</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Date et heure</span>
+                        <input type="datetime-local" step="60" t-att-value="state.scrapDateTime" t-on-change="onDateChange" required="required"/>
+                    </label>
+                </div>
+                <label class="ar_scrap_notes_field">
+                    <span>Remarques <small>(facultatif)</small></span>
+                    <textarea rows="2" maxlength="1000" placeholder="Ajouter une remarque sur cette opération..." t-att-value="state.notes" t-on-input="onNotesChange"/>
+                </label>
+
+                <div t-if="!cartLines.length" class="ar_scrap_empty_cart">
+                    <i class="fa fa-shopping-basket"/>
+                    <strong>Votre panier est vide</strong>
+                    <span>Cliquez sur une référence pour l'ajouter.</span>
+                </div>
+                <div t-else="" class="ar_scrap_cart_lines">
+                    <div t-foreach="cartLines" t-as="line" t-key="line.id" class="ar_scrap_cart_line">
+                        <div class="ar_scrap_line_top">
+                            <div>
+                                <strong t-esc="line.name"/>
+                                <small><t t-esc="line.length"/> mm de longueur unitaire</small>
+                                <small class="ar_scrap_cart_unit_price">Prix unitaire : <t t-esc="formatUnitPrice(line)"/></small>
+                                <small t-att-class="line.existsInSap ? 'ar_scrap_sap_badge is-sap' : 'ar_scrap_sap_badge is-non-sap'">
+                                    <i t-att-class="line.existsInSap ? 'fa fa-check-circle' : 'fa fa-minus-circle'"/>
+                                    <t t-esc="line.existsInSap ? 'Existe dans SAP' : 'Hors SAP'"/>
+                                </small>
+                            </div>
+                            <button type="button" class="ar_scrap_remove" t-on-click="() => removeLine(line.id)" title="Retirer"><i class="fa fa-times"/></button>
+                        </div>
+                        <div class="ar_scrap_qty_row">
+                            <button type="button" t-on-click="() => changeQuantity(line.id, -1)">−</button>
+                            <input type="number" min="0.001" step="0.001" t-att-value="line.quantity" t-on-change="(ev) => setQuantity(line.id, ev)"/>
+                            <button type="button" t-on-click="() => changeQuantity(line.id, 1)">+</button>
+                            <span class="ar_scrap_line_total"><t t-esc="(line.quantity * line.length).toFixed(3)"/> mm</span>
+                        </div>
+                        <div class="ar_scrap_line_amount">
+                            <span>Montant de la ligne</span>
+                            <strong t-esc="formatAmount(line.quantity * line.companyUnitPrice, line.companyCurrencyName, line.companyCurrencyDecimals)"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ar_scrap_summary">
+                    <div><span>Références</span><strong t-esc="cartLines.length"/></div>
+                    <div><span>Quantité totale</span><strong t-esc="totalQuantity.toFixed(3)"/></div>
+                    <div class="ar_scrap_summary_amount"><span>Montant total</span><strong t-esc="formatAmount(totalAmount)"/></div>
+                </div>
+                <button type="button" class="ar_scrap_validate" t-att-disabled="!cartLines.length || state.validating" t-on-click="validateCart">
+                    <i t-att-class="state.validating ? 'fa fa-spinner fa-spin' : 'fa fa-check-circle'"/>
+                    <t t-if="state.validating"> Validation...</t><t t-else=""> Valider le panier</t>
+                </button>
+            </aside>
+
+            <main class="ar_scrap_catalog">
+                <header class="ar_scrap_catalog_header">
+                    <div>
+                        <span class="ar_scrap_eyebrow">Catalogue</span>
+                        <h1>Références à scraper</h1>
+                        <p>Sélectionnez une référence puis ajustez sa quantité dans le panier.</p>
+                    </div>
+                    <div class="ar_scrap_catalog_filters">
+                        <label class="ar_scrap_sap_filter">
+                            <i class="fa fa-database"/>
+                            <select t-att-value="state.sapFilter" t-on-change="onSapFilterChange">
+                                <option value="all">Toutes les références</option>
+                                <option value="sap">Références SAP</option>
+                                <option value="non_sap">Références hors SAP</option>
+                            </select>
+                        </label>
+                        <label class="ar_scrap_zone_filter">
+                            <i class="fa fa-map-marker"/>
+                            <select t-att-value="state.zoneId" t-on-change="onZoneChange">
+                                <option value="">Toutes les zones</option>
+                                <option t-foreach="zoneOptions" t-as="zone" t-key="zone.id" t-att-value="zone.id" t-esc="zone.name"/>
+                            </select>
+                        </label>
+                        <label class="ar_scrap_search">
+                            <i class="fa fa-search"/>
+                            <input type="search" placeholder="Rechercher une référence..." t-att-value="state.search" t-on-input="onSearch"/>
+                        </label>
+                    </div>
+                </header>
+
+                <div t-if="state.loading" class="ar_scrap_catalog_state"><i class="fa fa-spinner fa-spin"/> Chargement des références...</div>
+                <div t-elif="!filteredProducts.length" class="ar_scrap_catalog_state">
+                    <i class="fa fa-cubes"/><strong>Aucune référence disponible</strong><span>Ajoutez les produits depuis le menu Paramétrage.</span>
+                </div>
+                <div t-else="" class="ar_scrap_product_grid">
+                    <article t-foreach="filteredProducts" t-as="product" t-key="product.id" class="ar_scrap_product_card" role="button" tabindex="0" t-on-click="() => addProduct(product)">
+                        <div class="ar_scrap_product_image">
+                            <img t-if="getProductImage(product)" t-att-src="getProductImage(product)" t-att-alt="product.name"/>
+                            <i t-else="" class="fa fa-cube"/>
+                            <span class="ar_scrap_length"><t t-esc="product.length"/> mm</span>
+                        </div>
+                        <div class="ar_scrap_product_info">
+                            <strong t-esc="product.name"/>
+                            <small t-if="getZoneName(product)" class="ar_scrap_product_zone"><i class="fa fa-map-marker"/> <t t-esc="getZoneName(product)"/></small>
+                            <small class="ar_scrap_product_price"><i class="fa fa-money"/> <t t-esc="formatUnitPrice(product)"/></small>
+                            <small t-att-class="product.exists_in_sap ? 'ar_scrap_sap_badge is-sap' : 'ar_scrap_sap_badge is-non-sap'">
+                                <i t-att-class="product.exists_in_sap ? 'fa fa-check-circle' : 'fa fa-minus-circle'"/>
+                                <t t-esc="product.exists_in_sap ? 'Existe dans SAP' : 'Hors SAP'"/>
+                            </small>
+                            <p t-esc="product.description || 'Aucune description'"/>
+                            <button t-if="product.description" type="button" class="ar_scrap_description_button" t-on-click.stop="() => showDescription(product)">
+                                <i class="fa fa-eye"/> Voir la description
+                            </button>
+                            <span><i class="fa fa-plus-circle"/> Ajouter au panier</span>
+                        </div>
+                        <span t-if="state.cart[product.id]" class="ar_scrap_cart_badge" t-esc="state.cart[product.id].quantity"/>
+                    </article>
+                </div>
+            </main>
+
+            <div t-if="state.descriptionProduct" class="ar_scrap_description_overlay" t-on-click="closeDescription">
+                <section class="ar_scrap_description_modal" role="dialog" aria-modal="true" t-on-click.stop="() => null">
+                    <header>
+                        <div>
+                            <span class="ar_scrap_eyebrow">Description complète</span>
+                            <h3 t-esc="state.descriptionProduct.name"/>
+                        </div>
+                        <button type="button" t-on-click="closeDescription" title="Fermer"><i class="fa fa-times"/></button>
+                    </header>
+                    <div class="ar_scrap_description_content" t-esc="state.descriptionProduct.description"/>
+                </section>
+            </div>
+        </div>
+    </t>
+</templates>
