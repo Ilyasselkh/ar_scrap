@@ -30,33 +30,79 @@
 .ar_scrap_eyebrow { color: var(--ar-teal); font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .ar_scrap_clear, .ar_scrap_remove { border: 0; color: #8b4351; background: #fff0f2; border-radius: 8px; }
 .ar_scrap_clear { padding: 7px 10px; }
+.ar_scrap_clear:disabled { opacity: .45; cursor: not-allowed; }
 .ar_scrap_remove { width: 29px; height: 29px; }
-.ar_scrap_operation_fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, .8fr); gap: 10px; margin-top: 18px; padding: 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_operation_fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; padding: 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
 .ar_scrap_operation_fields label { min-width: 0; margin: 0; }
 .ar_scrap_operation_fields label > span { display: block; margin: 0 0 6px 2px; color: #596577; font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .ar_scrap_operation_fields select,
 .ar_scrap_operation_fields input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd3dd; border-radius: 8px; outline: 0; color: var(--ar-ink); background: white; font-weight: 600; }
 .ar_scrap_operation_fields select:focus,
 .ar_scrap_operation_fields input:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .12); }
-.ar_scrap_notes_field { display: block; margin: 10px 0 0; padding: 11px 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_general_fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.ar_scrap_notes_field { display: block; margin: 0; padding: 11px 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
 .ar_scrap_notes_field > span { display: block; margin: 0 0 6px 2px; color: #596577; font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .ar_scrap_notes_field > span small { color: #929baa; font-size: 10px; font-weight: 600; text-transform: none; }
 .ar_scrap_notes_field textarea { display: block; width: 100%; min-height: 58px; max-height: 100px; padding: 9px 10px; resize: vertical; border: 1px solid #cbd3dd; border-radius: 8px; outline: 0; color: var(--ar-ink); background: #fff; }
 .ar_scrap_notes_field textarea:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .12); }
+.ar_scrap_attachments_field { min-width: 0; padding: 11px 13px; border: 1px solid #e0e5eb; border-radius: 12px; background: #f8fafb; }
+.ar_scrap_attachments_field > span { display: block; margin: 0 0 6px 2px; color: #596577; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_attachments_field > span small { color: #929baa; font-size: 10px; font-weight: 600; text-transform: none; }
+.ar_scrap_upload_button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; margin: 0; padding: 6px 10px; border: 1px dashed #00a09d; border-radius: 8px; color: #007f7c; background: #effafa; font-size: 11px; font-weight: 800; cursor: pointer; }
+.ar_scrap_upload_button:hover { background: #e0f6f5; }
+.ar_scrap_upload_button.is-disabled { opacity: .5; cursor: not-allowed; }
+.ar_scrap_upload_button input { display: none; }
+.ar_scrap_attachment_list { max-height: 68px; overflow-y: auto; margin-top: 7px; }
+.ar_scrap_attachment_chip { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 4px; padding: 4px 6px; border-radius: 6px; color: #566173; background: #e9eef3; font-size: 10px; }
+.ar_scrap_attachment_chip > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar_scrap_attachment_chip > button { flex: 0 0 22px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; color: #a33d4b; background: #fff0f2; }
+.ar_scrap_attachment_chip > button:disabled { opacity: .4; cursor: not-allowed; }
+.ar_scrap_attachment_empty { display: block; margin-top: 7px; color: #929baa; font-size: 10px; }
 .ar_scrap_empty_cart, .ar_scrap_catalog_state { display: flex; flex: 1; flex-direction: column; justify-content: center; align-items: center; gap: 8px; color: #7b8492; text-align: center; }
 .ar_scrap_empty_cart > i, .ar_scrap_catalog_state > i { font-size: 42px; color: #c4cad3; margin-bottom: 7px; }
 .ar_scrap_cart_lines { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 22px -8px 16px 0; padding-right: 8px; scrollbar-gutter: stable; }
-.ar_scrap_cart_line { padding: 14px; margin-bottom: 10px; border: 1px solid #e2e7ed; border-radius: 12px; background: #fafbfc; }
-.ar_scrap_line_top { display: flex; justify-content: space-between; gap: 12px; }
+.ar_scrap_cart_line { position: relative; padding: 14px; margin-bottom: 10px; border: 1px solid #e2e7ed; border-radius: 12px; background: #fafbfc; }
+.ar_scrap_cart_line.is-draft { border-color: rgba(0, 160, 157, .48); background: #fbfefe; box-shadow: 0 0 0 3px rgba(0, 160, 157, .07); }
+.ar_scrap_cart_line.is-confirmed { border-color: #d7e5dc; background: #f8fbf9; }
+.ar_scrap_line_top { display: grid; grid-template-columns: minmax(135px, .75fr) minmax(215px, 1.25fr); gap: 14px; padding-right: 32px; }
+.ar_scrap_cart_line .ar_scrap_remove { position: absolute; top: 12px; right: 12px; }
+.ar_scrap_cart_line .ar_scrap_remove:disabled { opacity: .35; cursor: not-allowed; }
 .ar_scrap_line_top strong, .ar_scrap_line_top small { display: block; }
 .ar_scrap_line_top small { margin-top: 3px; color: #7b8492; }
-.ar_scrap_line_top .ar_scrap_cart_unit_price { color: #087f67; font-weight: 800; }
 .ar_scrap_sap_badge { display: inline-flex !important; align-items: center; align-self: flex-start; gap: 4px; width: fit-content; margin-top: 5px !important; padding: 3px 7px; border-radius: 10px; font-size: 10px !important; font-weight: 800; line-height: 1.2; }
 .ar_scrap_sap_badge.is-sap { color: #117442 !important; background: #ddf5e7; }
 .ar_scrap_sap_badge.is-non-sap { color: #8a5a16 !important; background: #fff0d5; }
+.ar_scrap_line_confirmed_badge { display: inline-flex !important; align-items: center; gap: 4px; width: fit-content; margin-top: 7px !important; padding: 3px 7px; border-radius: 10px; color: #117442 !important; background: #ddf5e7; font-size: 10px !important; font-weight: 800; }
+.ar_scrap_line_defect_fields { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(145px, 1.2fr); gap: 8px; }
+.ar_scrap_line_defect_fields label { min-width: 0; margin: 0; }
+.ar_scrap_line_defect_fields label > span { display: block; margin: 0 0 5px 2px; color: #667183; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_line_defect_fields label > span b { color: #d63b4b; }
+.ar_scrap_line_defect_fields select,
+.ar_scrap_line_defect_fields textarea { display: block; width: 100%; border: 1px solid #cbd3dd; border-radius: 7px; outline: 0; color: var(--ar-ink); background: #fff; font-size: 12px; }
+.ar_scrap_line_defect_fields select { height: 34px; padding: 0 8px; }
+.ar_scrap_line_defect_fields textarea { height: 58px; padding: 7px 8px; resize: vertical; }
+.ar_scrap_line_defect_fields select:focus,
+.ar_scrap_line_defect_fields textarea:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .1); }
+.ar_scrap_defect_selector { display: grid; grid-template-columns: 38px minmax(0, 1fr) 20px; align-items: center; gap: 8px; width: 100%; height: 58px; padding: 5px 8px; border: 1px solid #cbd3dd; border-radius: 7px; color: #334054; background: #fff; text-align: left; }
+.ar_scrap_defect_selector:hover { border-color: var(--ar-teal); background: #f7fdfd; }
+.ar_scrap_defect_selector:disabled { opacity: .62; cursor: not-allowed; background: #edf1f3; }
+.ar_scrap_defect_selector img,
+.ar_scrap_defect_selector_icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 46px; overflow: hidden; border-radius: 6px; background: #edf1f5; }
+.ar_scrap_defect_selector img { object-fit: cover; }
+.ar_scrap_defect_selector_icon { color: #8792a2; font-size: 18px; }
+.ar_scrap_defect_selector_emoji { color: inherit; font-size: 23px; line-height: 1; }
+.ar_scrap_defect_selector strong { overflow: hidden; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ar_scrap_defect_selector strong.is-placeholder { color: #929baa; font-weight: 600; }
+.ar_scrap_defect_selector > i { color: var(--ar-purple); }
 .ar_scrap_qty_row { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
 .ar_scrap_qty_row button { width: 32px; height: 32px; border: 1px solid #d4dae2; border-radius: 7px; background: white; font-size: 18px; }
 .ar_scrap_qty_row input { width: 86px; height: 32px; border: 1px solid #cbd3dd; border-radius: 7px; text-align: center; font-weight: 700; }
+.ar_scrap_qty_row button:disabled,
+.ar_scrap_qty_row input:disabled,
+.ar_scrap_line_defect_fields select:disabled,
+.ar_scrap_line_defect_fields textarea:disabled { opacity: .62; cursor: not-allowed; background: #edf1f3; }
+.ar_scrap_qty_row .ar_scrap_confirm_line { width: auto; min-width: 138px; margin-left: auto; padding: 0 13px; border-color: #16834f; color: #fff; background: #16834f; font-size: 12px; font-weight: 800; }
+.ar_scrap_qty_row .ar_scrap_confirm_line:hover { border-color: #106b40; background: #106b40; }
 .ar_scrap_line_total { margin-left: auto; color: var(--ar-purple); font-size: 12px; font-weight: 700; }
 .ar_scrap_line_amount { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 9px; border-top: 1px dashed #d8dee6; color: #687486; font-size: 12px; }
 .ar_scrap_line_amount strong { color: #087f67; font-size: 13px; }
@@ -82,14 +128,13 @@
 .ar_scrap_product_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 17px; margin-top: 27px; }
 .ar_scrap_product_card { position: relative; display: flex; flex-direction: column; overflow: hidden; height: 380px; padding: 0; border: 1px solid #dfe4ea; border-radius: 13px; background: white; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(31, 43, 59, .07); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
 .ar_scrap_product_card:hover { transform: translateY(-4px); border-color: rgba(0, 160, 157, .55); box-shadow: 0 15px 30px rgba(31, 43, 59, .13); }
+.ar_scrap_product_card.is-locked { opacity: .38; filter: grayscale(.85); cursor: not-allowed; pointer-events: none; transform: none; box-shadow: none; }
 .ar_scrap_product_image { position: relative; display: flex; align-items: center; justify-content: center; height: 145px; background: linear-gradient(145deg, #f8fafb, #eef2f5); }
 .ar_scrap_product_image img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
 .ar_scrap_product_image > i { color: #c6cdd7; font-size: 48px; }
-.ar_scrap_length { position: absolute; top: 9px; right: 9px; padding: 4px 7px; border-radius: 6px; color: white; background: var(--ar-purple); font-size: 11px; font-weight: 800; }
 .ar_scrap_product_info { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 13px 14px 15px; }
 .ar_scrap_product_info > strong { display: -webkit-box; min-height: 36px; max-height: 36px; overflow: hidden; font-size: 15px; line-height: 18px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .ar_scrap_product_zone { display: block; margin-top: 5px; color: var(--ar-purple); font-size: 11px; font-weight: 700; }
-.ar_scrap_product_price { display: block; margin-top: 4px; color: #087f67; font-size: 12px; font-weight: 800; }
 .ar_scrap_product_info p { display: -webkit-box; height: 36px; min-height: 36px; overflow: hidden; margin: 5px 0 5px; color: #77808f; font-size: 12px; line-height: 18px; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .ar_scrap_description_button { align-self: flex-start; padding: 2px 0; border: 0; color: var(--ar-purple); background: transparent; font-size: 11px; font-weight: 800; }
 .ar_scrap_description_button:hover { color: var(--ar-teal); text-decoration: underline; }
@@ -97,11 +142,57 @@
 .ar_scrap_product_info > span:last-child { margin-top: auto; padding-top: 5px; }
 .ar_scrap_cart_badge { position: absolute; top: 9px; left: 9px; min-width: 25px; height: 25px; padding: 0 7px; border-radius: 13px; color: white; background: var(--ar-teal); line-height: 25px; text-align: center; font-weight: 800; box-shadow: 0 4px 10px rgba(0, 160, 157, .28); }
 .ar_scrap_description_overlay { position: fixed; inset: 46px 0 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(25, 33, 45, .52); backdrop-filter: blur(3px); z-index: 1050; }
-.ar_scrap_description_modal { width: 100%; max-width: 560px; max-height: calc(100vh - 100px); overflow: hidden; border-radius: 15px; background: white; box-shadow: 0 28px 70px rgba(15, 23, 42, .28); cursor: default; }
+.ar_scrap_description_modal { width: 100%; max-width: 980px; max-height: calc(100vh - 80px); overflow: hidden; border-radius: 17px; background: white; box-shadow: 0 28px 70px rgba(15, 23, 42, .28); cursor: default; }
 .ar_scrap_description_modal header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 22px 16px; border-bottom: 1px solid #e4e8ed; }
 .ar_scrap_description_modal h3 { margin: 4px 0 0; color: var(--ar-ink); font-size: 21px; font-weight: 800; }
 .ar_scrap_description_modal header button { flex: 0 0 34px; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #667085; background: #f0f2f5; }
-.ar_scrap_description_content { max-height: calc(100vh - 210px); overflow: auto; padding: 20px 22px 24px; color: #4c5869; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ar_scrap_description_content { max-height: calc(100vh - 190px); overflow: auto; padding: 20px 22px 24px; color: #4c5869; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ar_scrap_description_intro { display: grid; grid-template-columns: minmax(360px, 1.25fr) minmax(280px, .75fr); min-height: 440px; overflow: hidden; border: 1px solid #dfe5ec; border-radius: 14px; background: #fff; box-shadow: 0 10px 28px rgba(31, 43, 59, .08); }
+.ar_scrap_description_image { position: relative; display: flex; align-items: center; justify-content: center; min-height: 440px; overflow: hidden; border-right: 1px solid #e1e6ec; background: #f5f7f9; }
+.ar_scrap_description_image_main { display: block; width: 100%; height: 440px; padding: 8px; object-fit: contain; }
+.ar_scrap_description_image_empty { color: #b8c0cb; font-size: 72px; background: #f5f7f9; }
+.ar_scrap_description_content h4 { margin: 0 0 9px; color: #273245; font-size: 15px; font-weight: 800; }
+.ar_scrap_full_description { display: flex; flex-direction: column; justify-content: center; padding: 30px; background: linear-gradient(145deg, #fff, #f8fafb); }
+.ar_scrap_full_description h4 { margin-top: 8px; font-size: 20px; }
+.ar_scrap_full_description p { margin: 0; color: #5d6879; line-height: 1.7; white-space: pre-wrap; }
+.ar_scrap_description_meta { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-top: 24px; padding-top: 18px; border-top: 1px solid #e1e6ec; white-space: normal; }
+.ar_scrap_description_meta_item { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 12px; color: #526071; background: #edf1f5; font-size: 11px; font-weight: 800; }
+.ar_scrap_description_meta_item i { color: var(--ar-teal); }
+.ar_scrap_bom_section { margin-top: 22px; }
+.ar_scrap_bom_table_wrap { overflow-x: auto; border: 1px solid #dfe5ec; border-radius: 10px; }
+.ar_scrap_bom_table { width: 100%; min-width: 590px; border-collapse: collapse; white-space: normal; }
+.ar_scrap_bom_table th { padding: 10px 12px; color: #556173; background: #f0f3f7; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+.ar_scrap_bom_table td { padding: 10px 12px; border-top: 1px solid #e7ebf0; color: #4c5869; vertical-align: top; }
+.ar_scrap_bom_table th:nth-child(2),
+.ar_scrap_bom_table td:nth-child(2) { width: 105px; text-align: right; }
+.ar_scrap_bom_table th:last-child,
+.ar_scrap_bom_table td:last-child { width: 80px; text-align: center; }
+.ar_scrap_bom_empty { padding: 14px 16px; border: 1px dashed #d4dbe4; border-radius: 9px; color: #8a94a3; background: #f8fafb; text-align: center; white-space: normal; }
+.ar_scrap_defect_overlay { position: fixed; inset: 46px 0 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(25, 33, 45, .58); backdrop-filter: blur(3px); z-index: 1060; }
+.ar_scrap_defect_modal { width: 100%; max-width: 980px; max-height: calc(100vh - 90px); overflow: hidden; border-radius: 17px; background: #f6f8fb; box-shadow: 0 30px 75px rgba(15, 23, 42, .3); cursor: default; }
+.ar_scrap_defect_modal > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 24px 16px; border-bottom: 1px solid #e0e5eb; background: #fff; }
+.ar_scrap_defect_modal h3 { margin: 4px 0 0; color: #273245; font-size: 22px; font-weight: 800; }
+.ar_scrap_defect_modal > header button { flex: 0 0 34px; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #667085; background: #f0f2f5; }
+.ar_scrap_defect_search { display: flex; align-items: center; height: 42px; margin: 16px 24px 0; padding: 0 13px; border: 1px solid #d4dae3; border-radius: 10px; background: #fff; }
+.ar_scrap_defect_search i { color: #8792a2; }
+.ar_scrap_defect_search input { width: 100%; margin-left: 9px; border: 0; outline: 0; background: transparent; }
+.ar_scrap_defect_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; max-height: calc(100vh - 235px); overflow-y: auto; padding: 18px 24px 24px; }
+.ar_scrap_defect_card { display: flex; flex-direction: column; min-width: 0; height: 280px; overflow: hidden; padding: 0; border: 1px solid #dde3ea; border-radius: 12px; color: #273245; background: #fff; text-align: left; box-shadow: 0 7px 18px rgba(31, 43, 59, .06); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.ar_scrap_defect_card:hover { transform: translateY(-3px); border-color: rgba(0, 160, 157, .58); box-shadow: 0 13px 26px rgba(31, 43, 59, .13); }
+.ar_scrap_defect_card_image { display: flex; flex: 0 0 145px; align-items: center; justify-content: center; overflow: hidden; color: #a2abb8; background: linear-gradient(145deg, #f8fafb, #e9eef3); font-size: 46px; }
+.ar_scrap_defect_card_image img { width: 100%; height: 100%; object-fit: contain; padding: 7px; }
+.ar_scrap_defect_card_info { min-height: 0; padding: 12px 13px 4px; }
+.ar_scrap_defect_card_info strong { display: block; overflow: hidden; font-size: 14px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ar_scrap_defect_card_info p { display: -webkit-box; min-height: 34px; overflow: hidden; margin: 5px 0 0; color: #77808f; font-size: 11px; line-height: 17px; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ar_scrap_defect_card > span { margin-top: auto; padding: 8px 13px 12px; color: var(--ar-teal); font-size: 11px; font-weight: 800; }
+.ar_scrap_defect_card_other .ar_scrap_defect_card_image { color: #9b6b21; background: #fff4df; }
+.ar_scrap_defect_other_emoji { font-size: 58px; line-height: 1; }
+@media (max-width: 760px) {
+    .ar_scrap_description_intro { grid-template-columns: 1fr; }
+    .ar_scrap_description_image { min-height: 300px; }
+    .ar_scrap_description_image_main { height: 300px; }
+    .ar_scrap_full_description { padding: 22px; }
+}
 
 /* Modern operation form */
 .ar_scrap_order_form .ar_scrap_approve_btn { border-color: #16834f !important; color: #fff !important; background: #16834f !important; box-shadow: 0 5px 12px rgba(22, 131, 79, .22); }
@@ -136,6 +227,7 @@
 .ar_scrap_section_header small { color: #8a94a3; font-size: 11px; }
 .ar_scrap_order_notes { margin: 0 0 24px; }
 .ar_scrap_order_notes > .o_field_widget { display: block; min-height: 58px; padding: 14px 16px; border: 1px solid #e0e5ec; border-left: 4px solid #714b67; border-radius: 10px; color: #4d5868; background: #fff; line-height: 1.55; white-space: pre-wrap; box-shadow: 0 6px 16px rgba(31, 43, 59, .04); }
+.ar_scrap_order_attachments { margin: 0 0 24px; padding: 14px 16px; border: 1px solid #e0e5ec; border-radius: 10px; background: #fff; box-shadow: 0 6px 16px rgba(31, 43, 59, .04); }
 .ar_scrap_refusal_reason > .o_field_widget { border-left-color: #d63b4b; background: #fff8f8; }
 .ar_scrap_refusal_reason .ar_scrap_section_header i { color: #d63b4b; }
 .ar_scrap_confirmation { display: flex; align-items: flex-start; gap: 15px; margin: 8px 0 20px; padding: 17px 18px; border: 1px solid #dfe5eb; border-radius: 12px; background: #f8fafb; }
@@ -153,6 +245,9 @@
 .ar_scrap_order_form .o_list_table thead th { color: #556173; font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .ar_scrap_order_form .o_list_table tbody tr:hover { background: #f5fbfb; }
 .ar_scrap_order_form .o-mail-Chatter { max-width: none; width: calc(100% - 32px); margin: 18px auto 30px; border: 1px solid #e0e5ec; border-radius: 14px; background: #fff; box-shadow: 0 10px 28px rgba(31, 43, 59, .06); }
+@media (max-width: 1500px) {
+    .ar_scrap_line_top { grid-template-columns: 1fr; }
+}
 @media (max-width: 900px) {
     .ar_scrap_cart_app { grid-template-columns: 1fr; height: auto; overflow: auto; }
     .ar_scrap_cart_panel { min-height: 520px; border-right: 0; border-bottom: 1px solid #dfe4ea; }
@@ -163,6 +258,7 @@
     .ar_scrap_sap_filter { width: 100%; }
     .ar_scrap_search { width: 100%; min-width: 0; }
     .ar_scrap_info_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ar_scrap_general_fields { grid-template-columns: 1fr; }
 }
 @media (max-width: 430px) {
     .ar_scrap_operation_fields { grid-template-columns: 1fr; }
@@ -172,4 +268,11 @@
     .ar_scrap_info_grid { grid-template-columns: 1fr; }
     .ar_scrap_info_card_rule { grid-column: auto; }
     .ar_scrap_section_header { align-items: flex-start; flex-direction: column; gap: 3px; }
+}
+.ar_scrap_order_lines .ar_scrap_defect_thumb img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f4f6f8;
 }

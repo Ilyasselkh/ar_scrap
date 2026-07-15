@@ -8,7 +8,6 @@
                 <field name="sequence" widget="handle"/>
                 <field name="image_128" widget="image" options="{'size': [48, 48]}"/>
                 <field name="name"/>
-                <field name="length"/>
                 <field name="unit_price" widget="monetary"/>
                 <field name="currency_id" optional="show"/>
                 <field name="zone_id"/>
@@ -26,7 +25,6 @@
             <kanban class="ar_scrap_product_kanban" quick_create="false">
                 <field name="name"/>
                 <field name="image_128"/>
-                <field name="length"/>
                 <field name="unit_price"/>
                 <field name="currency_id"/>
                 <field name="description"/>
@@ -39,7 +37,6 @@
                             <field name="image_128" widget="image" class="mb-2"/>
                             <strong><field name="name"/></strong>
                             <div t-if="record.zone_id.raw_value" class="text-primary"><i class="fa fa-map-marker"/> <field name="zone_id"/></div>
-                            <div class="text-muted"><field name="length"/> mm de longueur</div>
                             <div class="text-success"><field name="unit_price" widget="monetary"/></div>
                             <small><field name="description"/></small>
                         </div>
@@ -62,7 +59,6 @@
                     </div>
                     <group>
                         <group>
-                            <field name="length"/>
                             <field name="unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             <field name="currency_id" options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="zone_id" options="{'no_create_edit': False}"/>
@@ -71,9 +67,18 @@
                             <field name="exists_in_sap" widget="boolean_toggle"/>
                         </group>
                         <group>
-                            <field name="description" placeholder="Description affichée dans le panier..."/>
+                            <field name="description" placeholder="Description affichée dans la liste..."/>
                         </group>
                     </group>
+                    <separator string="BOM"/>
+                    <field name="bom_line_ids" nolabel="1">
+                        <list editable="bottom" string="BOM">
+                            <field name="reference"/>
+                            <field name="quantity"/>
+                            <field name="description"/>
+                            <field name="unit"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>
@@ -81,6 +86,7 @@
 
     <record id="action_ar_scrap_product" model="ir.actions.act_window">
         <field name="name">Paramétrage</field>
+        <field name="group_ids" eval="[Command.link(ref('ar_scrap.group_ar_scrap_settings'))]"/>
         <field name="res_model">ar.scrap.product</field>
         <field name="view_mode">list,kanban,form</field>
         <field name="context">{'active_test': False}</field>

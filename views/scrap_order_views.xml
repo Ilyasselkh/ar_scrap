@@ -8,11 +8,11 @@
                 <field name="name"/>
                 <field name="scrap_date"/>
                 <field name="shift"/>
+                <field name="production_order_number" string="OF"/>
                 <field name="state" widget="badge" decoration-success="state == 'validated'" decoration-danger="state == 'refused'" decoration-warning="state not in ('validated', 'refused')"/>
                 <field name="validated_at"/>
                 <field name="user_id"/>
                 <field name="total_quantity" sum="Total"/>
-                <field name="total_length" sum="Total"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="total_amount" widget="monetary" sum="Total"/>
             </list>
@@ -49,28 +49,20 @@
 
                     <div class="ar_scrap_info_grid">
                         <div class="ar_scrap_info_card">
-                            <i class="fa fa-calendar"/>
-                            <div><span>Date et heure</span><strong><field name="scrap_date" nolabel="1"/></strong></div>
+                            <i class="fa fa-user"/>
+                            <div><span>Déclaré par</span><strong><field name="user_id" nolabel="1"/></strong></div>
                         </div>
                         <div class="ar_scrap_info_card">
                             <i class="fa fa-users"/>
                             <div><span>Shift</span><strong><field name="shift" nolabel="1"/></strong></div>
                         </div>
                         <div class="ar_scrap_info_card">
-                            <i class="fa fa-user"/>
-                            <div><span>Déclaré par</span><strong><field name="user_id" nolabel="1"/></strong></div>
+                            <i class="fa fa-industry"/>
+                            <div><span>OF</span><strong><field name="production_order_number" nolabel="1"/></strong></div>
                         </div>
                         <div class="ar_scrap_info_card">
-                            <i class="fa fa-clock-o"/>
-                            <div><span>Date de validation</span><strong><field name="validated_at" nolabel="1"/></strong></div>
-                        </div>
-                        <div class="ar_scrap_info_card ar_scrap_info_card_accent">
-                            <i class="fa fa-cubes"/>
-                            <div><span>Quantité totale</span><strong><field name="total_quantity" nolabel="1"/></strong></div>
-                        </div>
-                        <div class="ar_scrap_info_card ar_scrap_info_card_accent">
-                            <i class="fa fa-arrows-h"/>
-                            <div><span>Longueur totale</span><strong><field name="total_length" nolabel="1"/></strong></div>
+                            <i class="fa fa-calendar"/>
+                            <div><span>Date et heure</span><strong><field name="scrap_date" nolabel="1"/></strong></div>
                         </div>
                         <div class="ar_scrap_info_card ar_scrap_info_card_amount">
                             <i class="fa fa-money"/>
@@ -80,9 +72,16 @@
 
                     <div class="ar_scrap_order_notes" invisible="not notes">
                         <div class="ar_scrap_section_header">
-                            <div><i class="fa fa-comment-o"/><span>Remarques</span></div>
+                            <div><i class="fa fa-comment-o"/><span>Commentaire général</span></div>
                         </div>
                         <field name="notes" nolabel="1" readonly="True"/>
+                    </div>
+
+                    <div class="ar_scrap_order_attachments" invisible="not attachment_ids">
+                        <div class="ar_scrap_section_header">
+                            <div><i class="fa fa-paperclip"/><span>Pièces jointes</span></div>
+                        </div>
+                        <field name="attachment_ids" widget="many2many_binary" nolabel="1" readonly="True"/>
                     </div>
 
                     <div class="ar_scrap_order_notes ar_scrap_refusal_reason" invisible="not refusal_reason">
@@ -101,11 +100,11 @@
                             <field name="currency_id" column_invisible="True"/>
                             <field name="product_name"/>
                             <field name="product_description" optional="show"/>
-                            <field name="product_length"/>
-                            <field name="quantity"/>
-                            <field name="total_length"/>
-                            <field name="unit_price" widget="monetary"/>
-                            <field name="total_amount" widget="monetary"/>
+                            <field name="quantity" string="Quantité"/>
+                            <field name="total_amount" string="Montant total" widget="monetary"/>
+                            <field name="defect_type_name"/>
+                            <field name="defect_type_image" string="Image du défaut" widget="image" options="{'size': [48, 48]}" class="ar_scrap_defect_thumb"/>
+                            <field name="defect_comment" optional="show"/>
                         </list>
                     </field>
 
@@ -135,12 +134,14 @@
                 <field name="name"/>
                 <field name="user_id"/>
                 <field name="shift"/>
+                <field name="production_order_number" string="OF"/>
                 <field name="scrap_date"/>
                 <field name="validated_at"/>
                 <filter name="my_operations" string="Mes opérations" domain="[('user_id', '=', uid)]"/>
                 <group>
                     <filter name="group_user" string="Utilisateur" context="{'group_by': 'user_id'}"/>
                     <filter name="group_shift" string="Shift" context="{'group_by': 'shift'}"/>
+                    <filter name="group_production_order" string="OF" context="{'group_by': 'production_order_number'}"/>
                     <filter name="group_scrap_date" string="Date et heure" context="{'group_by': 'scrap_date'}"/>
                     <filter name="group_date" string="Date de validation" context="{'group_by': 'validated_at'}"/>
                 </group>
@@ -149,10 +150,18 @@
     </record>
 
     <record id="action_ar_scrap_order_archive" model="ir.actions.act_window">
-        <field name="name">Archive</field>
+        <field name="name">Validées</field>
         <field name="res_model">ar.scrap.order</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('state', 'in', ('validated', 'refused'))]</field>
+        <field name="domain">[('state', '=', 'validated')]</field>
+        <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+    </record>
+
+    <record id="action_ar_scrap_order_refused" model="ir.actions.act_window">
+        <field name="name">Refusées</field>
+        <field name="res_model">ar.scrap.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'refused')]</field>
         <field name="search_view_id" ref="view_ar_scrap_order_search"/>
     </record>
 

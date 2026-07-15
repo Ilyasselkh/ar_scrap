@@ -1,3 +1,6 @@
+import base64
+import binascii
+
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, ValidationError
 
@@ -7,6 +10,7 @@ class ArScrapOrder(models.Model):
     _description = "Opération de scrap"
     _order = "validated_at desc, id desc"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _mail_post_access = "read"
 
     name = fields.Char(
         string="Numéro",
@@ -41,12 +45,33 @@ class ArScrapOrder(models.Model):
         string="Date et heure",
         readonly=True,
     )
+    production_order_id = fields.Many2one(
+        "ar.scrap.production.order",
+        string="OF",
+        readonly=True,
+        ondelete="restrict",
+    )
+    production_order_number = fields.Char(string="Numéro OF", readonly=True)
+    production_order_quantity = fields.Float(
+        string="Quantité OF",
+        readonly=True,
+        digits=(16, 3),
+    )
     notes = fields.Text(
-        string="Remarques",
+        string="Commentaire général",
         readonly=True,
     )
     refusal_reason = fields.Text(
         string="Motif de refus",
+        readonly=True,
+        copy=False,
+    )
+    attachment_ids = fields.Many2many(
+        "ir.attachment",
+        "ar_scrap_order_attachment_rel",
+        "order_id",
+        "attachment_id",
+        string="Pièces jointes",
         readonly=True,
         copy=False,
     )
@@ -344,10 +369,18 @@ class ArScrapOrder(models.Model):
         return super().create(vals_list)
 
     @api.model
-    def create_from_cart(self, cart_lines, shift, scrap_datetime, notes=None):
+    def create_from_cart(
+        self,
+        cart_lines,
+        shift,
+        scrap_datetime,
+        notes=None,
+        attachments=None,
+        production_order_id=None,
+    ):
         """Validate a cart in one transaction and return the archive record."""
         if not isinstance(cart_lines, list) or not cart_lines:
-            raise ValidationError(_("Le panier est vide."))
+            raise ValidationError(_("La liste de SCRAP est vide."))
 
         valid_shifts = dict(self._fields["shift"].selection)
         if shift not in valid_shifts:
@@ -358,16 +391,53 @@ class ArScrapOrder(models.Model):
             scrap_datetime = False
         if not scrap_datetime:
             raise ValidationError(_("Sélectionnez une date et une heure valides."))
+        try:
+            production_order_id = int(production_order_id)
+        except (TypeError, ValueError):
+            raise ValidationError(_("Sélectionnez un OF valide."))
+        production_order = self.env["ar.scrap.production.order"].browse(production_order_id).exists()
+        if not production_order or not production_order.active:
+            raise ValidationError(_("L'OF sélectionné n'existe plus ou a été archivé."))
+        local_scrap_datetime = fields.Datetime.context_timestamp(self, scrap_datetime)
+        scrap_day = local_scrap_datetime.date()
+        if not (production_order.valid_from <= scrap_day <= production_order.valid_to):
+            raise ValidationError(_("L'OF sélectionné n'est pas valide à la date de la déclaration."))
         if notes is not None and not isinstance(notes, str):
-            raise ValidationError(_("Le format des remarques est invalide."))
+            raise ValidationError(_("Le format du commentaire général est invalide."))
         notes = (notes or "").strip()
         if len(notes) > 1000:
-            raise ValidationError(_("Les remarques ne peuvent pas dépasser 1000 caractères."))
+            raise ValidationError(_("Le commentaire général ne peut pas dépasser 1000 caractères."))
+        attachments = attachments or []
+        if not isinstance(attachments, list):
+            raise ValidationError(_("Le format des pièces jointes est invalide."))
+        if len(attachments) > 10:
+            raise ValidationError(_("Vous ne pouvez pas joindre plus de 10 fichiers."))
+        validated_attachments = []
+        for attachment in attachments:
+            if not isinstance(attachment, dict):
+                raise ValidationError(_("Une pièce jointe est invalide."))
+            name = attachment.get("name")
+            data = attachment.get("data")
+            mimetype = attachment.get("mimetype") or "application/octet-stream"
+            if not isinstance(name, str) or not name.strip() or not isinstance(data, str):
+                raise ValidationError(_("Le nom ou le contenu d'une pièce jointe est invalide."))
+            name = name.strip()[:255]
+            if not isinstance(mimetype, str):
+                mimetype = "application/octet-stream"
+            mimetype = mimetype[:255]
+            try:
+                decoded_data = base64.b64decode(data, validate=True)
+            except (binascii.Error, ValueError):
+                raise ValidationError(_("Le contenu de la pièce jointe %(name)s est invalide.", name=name))
+            if len(decoded_data) > 10 * 1024 * 1024:
+                raise ValidationError(_("La pièce jointe %(name)s dépasse la taille maximale de 10 Mo.", name=name))
+            validated_attachments.append({"name": name, "datas": data, "mimetype": mimetype})
 
-        quantities = {}
+        parsed_lines = []
+        product_ids = set()
         for item in cart_lines:
             if not isinstance(item, dict):
-                raise ValidationError(_("Une ligne du panier est invalide."))
+                raise ValidationError(_("Une ligne de la liste est invalide."))
             try:
                 product_id = int(item.get("product_id"))
                 quantity = float(item.get("quantity"))
@@ -375,25 +445,77 @@ class ArScrapOrder(models.Model):
                 raise ValidationError(_("La référence ou la quantité est invalide."))
             if product_id <= 0 or quantity <= 0:
                 raise ValidationError(_("Les quantités scrapées doivent être supérieures à zéro."))
-            quantities[product_id] = quantities.get(product_id, 0.0) + quantity
+            raw_defect_type = item.get("defect_type_id")
+            defect_comment = item.get("defect_comment") or ""
+            if not isinstance(defect_comment, str):
+                raise ValidationError(_("Le format du commentaire de défaut est invalide."))
+            defect_comment = defect_comment.strip()
+            if len(defect_comment) > 1000:
+                raise ValidationError(_("Le commentaire de défaut ne peut pas dépasser 1000 caractères."))
+            if raw_defect_type == "other":
+                defect_type_id = False
+                defect_type_name = _("Autre")
+                if not defect_comment:
+                    raise ValidationError(_("Le commentaire est obligatoire lorsque le type de défaut est Autre."))
+            else:
+                try:
+                    defect_type_id = int(raw_defect_type)
+                except (TypeError, ValueError):
+                    raise ValidationError(_("Sélectionnez un type de défaut pour chaque référence."))
+                if defect_type_id <= 0:
+                    raise ValidationError(_("Sélectionnez un type de défaut pour chaque référence."))
+                defect_type_name = False
 
-        products = self.env["ar.scrap.product"].browse(list(quantities)).exists()
-        if len(products) != len(quantities) or any(not product.active for product in products):
-            raise ValidationError(_("Une référence du panier n'existe plus ou a été archivée."))
+            parsed_lines.append(
+                {
+                    "product_id": product_id,
+                    "quantity": quantity,
+                    "defect_type_id": defect_type_id,
+                    "defect_type_name": defect_type_name,
+                    "defect_comment": defect_comment,
+                }
+            )
+            product_ids.add(product_id)
+
+        products = self.env["ar.scrap.product"].browse(list(product_ids)).exists()
+        if len(products) != len(product_ids) or any(not product.active for product in products):
+            raise ValidationError(_("Une référence de la liste de SCRAP n'existe plus ou a été archivée."))
+
+        configured_defect_ids = {
+            line["defect_type_id"] for line in parsed_lines if line["defect_type_id"]
+        }
+        defect_types = self.env["ar.scrap.defect.type"].browse(configured_defect_ids).exists()
+        if len(defect_types) != len(configured_defect_ids) or any(not defect.active for defect in defect_types):
+            raise ValidationError(_("Un type de défaut sélectionné n'existe plus ou a été archivé."))
+        defect_names = {defect.id: defect.name for defect in defect_types}
+        for line in parsed_lines:
+            defect_type_id = line["defect_type_id"]
+            if (
+                defect_type_id
+                and defect_names[defect_type_id].strip().casefold() == "autre"
+                and not line["defect_comment"]
+            ):
+                raise ValidationError(_("Le commentaire est obligatoire lorsque le type de défaut est Autre."))
 
         company = self.env.company
         company_currency = company.currency_id
         conversion_date = fields.Date.context_today(self)
         commands = []
         total_amount = 0.0
-        for product in products:
+        products_by_id = {product.id: product for product in products}
+        for parsed_line in parsed_lines:
+            product = products_by_id[parsed_line["product_id"]]
+            defect_type_id = parsed_line["defect_type_id"]
+            defect_type_name = parsed_line["defect_type_name"]
+            defect_comment = parsed_line["defect_comment"]
+            quantity = parsed_line["quantity"]
             unit_price = product.currency_id._convert(
                 product.unit_price,
                 company_currency,
                 company,
                 conversion_date,
             )
-            line_amount = company_currency.round(unit_price * quantities[product.id])
+            line_amount = company_currency.round(unit_price * quantity)
             total_amount += line_amount
             commands.append(
                 fields.Command.create(
@@ -401,9 +523,11 @@ class ArScrapOrder(models.Model):
                         "product_id": product.id,
                         "product_name": product.name,
                         "product_description": product.description,
-                        "product_length": product.length,
                         "unit_price": unit_price,
-                        "quantity": quantities[product.id],
+                        "quantity": quantity,
+                        "defect_type_id": defect_type_id,
+                        "defect_type_name": defect_type_name or defect_names[defect_type_id],
+                        "defect_comment": defect_comment,
                     }
                 )
             )
@@ -421,6 +545,9 @@ class ArScrapOrder(models.Model):
         values = {
             "shift": shift,
             "scrap_date": scrap_datetime,
+            "production_order_id": production_order.id,
+            "production_order_number": production_order.name,
+            "production_order_quantity": production_order.quantity,
             "notes": notes,
             "currency_id": company_currency.id,
             "line_ids": commands,
@@ -437,6 +564,18 @@ class ArScrapOrder(models.Model):
                 }
             )
         order = self.create(values)
+        if validated_attachments:
+            created_attachments = self.env["ir.attachment"].sudo().create(
+                [
+                    {
+                        **attachment_values,
+                        "res_model": self._name,
+                        "res_id": order.id,
+                    }
+                    for attachment_values in validated_attachments
+                ]
+            )
+            order.sudo().write({"attachment_ids": [fields.Command.set(created_attachments.ids)]})
         order._notify_current_validators()
         return {
             "id": order.id,
@@ -467,6 +606,19 @@ class ArScrapOrderLine(models.Model):
     product_description = fields.Text(string="Description", readonly=True)
     product_length = fields.Float(string="Longueur (mm)", readonly=True, digits=(16, 3))
     quantity = fields.Float(string="Quantité scrapée", required=True, readonly=True, digits=(16, 3))
+    defect_type_id = fields.Many2one(
+        "ar.scrap.defect.type",
+        string="Type de défaut",
+        readonly=True,
+        ondelete="restrict",
+    )
+    defect_type_image = fields.Binary(
+        string="Image du défaut",
+        related="defect_type_id.image_128",
+        readonly=True,
+    )
+    defect_type_name = fields.Char(string="Type de défaut", readonly=True)
+    defect_comment = fields.Text(string="Commentaire", readonly=True)
     currency_id = fields.Many2one(
         "res.currency",
         string="Devise",

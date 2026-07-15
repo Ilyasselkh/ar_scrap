@@ -8,7 +8,7 @@
                         <span class="ar_scrap_eyebrow">Opération en cours</span>
                         <h2>Déclaration SCRAP</h2>
                     </div>
-                    <button t-if="cartLines.length" type="button" class="ar_scrap_clear" t-on-click="clearCart" title="Vider le panier">
+                    <button t-if="cartLines.length" type="button" class="ar_scrap_clear" t-att-disabled="activeDraftLine" t-on-click="clearCart" title="Vider la liste">
                         <i class="fa fa-trash-o"/> Vider
                     </button>
                 </div>
@@ -16,7 +16,7 @@
                 <div class="ar_scrap_operation_fields">
                     <label>
                         <span>Shift</span>
-                        <select t-att-value="state.shift" t-on-change="onShiftChange" required="required">
+                        <select t-att-value="state.shift" t-att-disabled="activeDraftLine" t-on-change="onShiftChange" required="required">
                             <option value="">Sélectionner un shift...</option>
                             <option value="team_1">Équipe 1</option>
                             <option value="team_2">Équipe 2</option>
@@ -24,39 +24,90 @@
                         </select>
                     </label>
                     <label>
+                        <span>OF</span>
+                        <select t-att-value="state.productionOrderId" t-att-disabled="activeDraftLine" t-on-change="onProductionOrderChange" required="required">
+                            <option value="">Sélectionner un OF...</option>
+                            <option t-foreach="availableProductionOrders" t-as="productionOrder" t-key="productionOrder.id" t-att-value="productionOrder.id">
+                                <t t-esc="productionOrder.name"/> — Qté : <t t-esc="formatQuantity(productionOrder.quantity)"/>
+                            </option>
+                        </select>
+                    </label>
+                    <label>
                         <span>Date et heure</span>
-                        <input type="datetime-local" step="60" t-att-value="state.scrapDateTime" t-on-change="onDateChange" required="required"/>
+                        <input type="datetime-local" step="60" t-att-value="state.scrapDateTime" t-att-disabled="activeDraftLine" t-on-change="onDateChange" required="required"/>
                     </label>
                 </div>
-                <label class="ar_scrap_notes_field">
-                    <span>Remarques <small>(facultatif)</small></span>
-                    <textarea rows="2" maxlength="1000" placeholder="Ajouter une remarque sur cette opération..." t-att-value="state.notes" t-on-input="onNotesChange"/>
-                </label>
+                <div class="ar_scrap_general_fields">
+                    <label class="ar_scrap_notes_field">
+                        <span>Commentaire général <small>(facultatif)</small></span>
+                        <textarea rows="2" maxlength="1000" placeholder="Ajouter un commentaire général..." t-att-value="state.notes" t-att-disabled="activeDraftLine" t-on-input="onNotesChange"/>
+                    </label>
+                    <div class="ar_scrap_attachments_field">
+                        <span>Pièces jointes <small>(facultatif, 10 Mo max.)</small></span>
+                        <label t-att-class="activeDraftLine ? 'ar_scrap_upload_button is-disabled' : 'ar_scrap_upload_button'">
+                            <i class="fa fa-paperclip"/> Ajouter des fichiers
+                            <input type="file" multiple="multiple" t-att-disabled="activeDraftLine" t-on-change="onAttachmentsChange"/>
+                        </label>
+                        <div t-if="state.attachments.length" class="ar_scrap_attachment_list">
+                            <div t-foreach="state.attachments" t-as="attachment" t-key="attachment.clientId" class="ar_scrap_attachment_chip">
+                                <i class="fa fa-file-o"/>
+                                <span t-esc="attachment.name"/>
+                                <button type="button" t-att-disabled="activeDraftLine" t-on-click.stop="() => removeAttachment(attachment.clientId)" title="Retirer">
+                                    <i class="fa fa-times"/>
+                                </button>
+                            </div>
+                        </div>
+                        <small t-else="" class="ar_scrap_attachment_empty">Aucun fichier ajouté</small>
+                    </div>
+                </div>
 
                 <div t-if="!cartLines.length" class="ar_scrap_empty_cart">
                     <i class="fa fa-shopping-basket"/>
-                    <strong>Votre panier est vide</strong>
+                    <strong>Votre liste de scrap est vide</strong>
                     <span>Cliquez sur une référence pour l'ajouter.</span>
                 </div>
-                <div t-else="" class="ar_scrap_cart_lines">
-                    <div t-foreach="cartLines" t-as="line" t-key="line.id" class="ar_scrap_cart_line">
+                <div t-else="" class="ar_scrap_cart_lines" t-ref="cartLines">
+                    <div t-foreach="displayedCartLines" t-as="line" t-key="line.lineId"
+                         t-att-class="'ar_scrap_cart_line ' + (line.confirmed ? 'is-confirmed' : 'is-draft')">
                         <div class="ar_scrap_line_top">
                             <div>
                                 <strong t-esc="line.name"/>
-                                <small><t t-esc="line.length"/> mm de longueur unitaire</small>
-                                <small class="ar_scrap_cart_unit_price">Prix unitaire : <t t-esc="formatUnitPrice(line)"/></small>
                                 <small t-att-class="line.existsInSap ? 'ar_scrap_sap_badge is-sap' : 'ar_scrap_sap_badge is-non-sap'">
                                     <i t-att-class="line.existsInSap ? 'fa fa-check-circle' : 'fa fa-minus-circle'"/>
                                     <t t-esc="line.existsInSap ? 'Existe dans SAP' : 'Hors SAP'"/>
                                 </small>
+                                <small t-if="line.confirmed" class="ar_scrap_line_confirmed_badge"><i class="fa fa-check"/> Ligne confirmée</small>
                             </div>
-                            <button type="button" class="ar_scrap_remove" t-on-click="() => removeLine(line.id)" title="Retirer"><i class="fa fa-times"/></button>
+                            <div class="ar_scrap_line_defect_fields">
+                                <label class="ar_scrap_defect_picker_field">
+                                    <span>Type de défaut <b>*</b></span>
+                                    <button type="button" class="ar_scrap_defect_selector" t-att-disabled="line.confirmed" t-on-click="() => openDefectPicker(line.lineId)">
+                                        <img t-if="line.defectTypeImage" t-att-src="line.defectTypeImage" t-att-alt="line.defectTypeName"/>
+                                        <span t-elif="line.defectTypeEmoji" class="ar_scrap_defect_selector_icon ar_scrap_defect_selector_emoji" t-esc="line.defectTypeEmoji"/>
+                                        <span t-else="" class="ar_scrap_defect_selector_icon"><i class="fa fa-exclamation-circle"/></span>
+                                        <strong t-att-class="line.defectTypeName ? '' : 'is-placeholder'" t-esc="line.defectTypeName || 'Sélectionner un défaut...'"/>
+                                        <i class="fa fa-th-large"/>
+                                    </button>
+                                </label>
+                                <label>
+                                    <span>Commentaire <b t-if="line.defectTypeId === 'other'">*</b></span>
+                                    <textarea rows="2" maxlength="1000"
+                                              t-att-placeholder="line.defectTypeId === 'other' ? 'Motif obligatoire pour Autre...' : 'Ajouter un commentaire...'"
+                                              t-att-value="line.defectComment"
+                                              t-att-disabled="line.confirmed"
+                                              t-on-input="(ev) => onDefectCommentChange(line.lineId, ev)"
+                                              t-att-required="line.defectTypeId === 'other'"/>
+                                </label>
+                            </div>
+                            <button type="button" class="ar_scrap_remove" t-att-disabled="line.confirmed" t-on-click="() => removeLine(line.lineId)" title="Retirer"><i class="fa fa-times"/></button>
                         </div>
                         <div class="ar_scrap_qty_row">
-                            <button type="button" t-on-click="() => changeQuantity(line.id, -1)">−</button>
-                            <input type="number" min="0.001" step="0.001" t-att-value="line.quantity" t-on-change="(ev) => setQuantity(line.id, ev)"/>
-                            <button type="button" t-on-click="() => changeQuantity(line.id, 1)">+</button>
-                            <span class="ar_scrap_line_total"><t t-esc="(line.quantity * line.length).toFixed(3)"/> mm</span>
+                            <button type="button" t-att-disabled="line.confirmed" t-on-click="() => changeQuantity(line.lineId, -1)">−</button>
+                            <input type="number" min="0.001" step="0.001" t-att-disabled="line.confirmed" t-att-value="line.quantity" t-on-change="(ev) => setQuantity(line.lineId, ev)"/>
+                            <button type="button" t-att-disabled="line.confirmed" t-on-click="() => changeQuantity(line.lineId, 1)">+</button>
+                            <button t-if="!line.confirmed" type="button" class="ar_scrap_confirm_line" t-on-click="() => confirmLine(line.lineId)">
+                                <i class="fa fa-check-circle"/> Valider la ligne
+                            </button>
                         </div>
                         <div class="ar_scrap_line_amount">
                             <span>Montant de la ligne</span>
@@ -70,9 +121,9 @@
                     <div><span>Quantité totale</span><strong t-esc="totalQuantity.toFixed(3)"/></div>
                     <div class="ar_scrap_summary_amount"><span>Montant total</span><strong t-esc="formatAmount(totalAmount)"/></div>
                 </div>
-                <button type="button" class="ar_scrap_validate" t-att-disabled="!cartLines.length || state.validating" t-on-click="validateCart">
+                <button type="button" class="ar_scrap_validate" t-att-disabled="!allLinesConfirmed || state.validating" t-on-click="validateCart">
                     <i t-att-class="state.validating ? 'fa fa-spinner fa-spin' : 'fa fa-check-circle'"/>
-                    <t t-if="state.validating"> Validation...</t><t t-else=""> Valider le panier</t>
+                    <t t-if="state.validating"> Validation...</t><t t-else=""> Valider la liste de SCRAP</t>
                 </button>
             </aside>
 
@@ -81,7 +132,7 @@
                     <div>
                         <span class="ar_scrap_eyebrow">Catalogue</span>
                         <h1>Références à scraper</h1>
-                        <p>Sélectionnez une référence puis ajustez sa quantité dans le panier.</p>
+                        <p>Sélectionnez une référence puis ajustez sa quantité dans la liste.</p>
                     </div>
                     <div class="ar_scrap_catalog_filters">
                         <label class="ar_scrap_sap_filter">
@@ -111,27 +162,27 @@
                     <i class="fa fa-cubes"/><strong>Aucune référence disponible</strong><span>Ajoutez les produits depuis le menu Paramétrage.</span>
                 </div>
                 <div t-else="" class="ar_scrap_product_grid">
-                    <article t-foreach="filteredProducts" t-as="product" t-key="product.id" class="ar_scrap_product_card" role="button" tabindex="0" t-on-click="() => addProduct(product)">
+                    <article t-foreach="filteredProducts" t-as="product" t-key="product.id"
+                             t-att-class="activeDraftLine ? 'ar_scrap_product_card is-locked' : 'ar_scrap_product_card'"
+                             role="button" tabindex="0" t-att-aria-disabled="activeDraftLine ? 'true' : 'false'" t-on-click="() => addProduct(product)">
                         <div class="ar_scrap_product_image">
                             <img t-if="getProductImage(product)" t-att-src="getProductImage(product)" t-att-alt="product.name"/>
                             <i t-else="" class="fa fa-cube"/>
-                            <span class="ar_scrap_length"><t t-esc="product.length"/> mm</span>
                         </div>
                         <div class="ar_scrap_product_info">
                             <strong t-esc="product.name"/>
                             <small t-if="getZoneName(product)" class="ar_scrap_product_zone"><i class="fa fa-map-marker"/> <t t-esc="getZoneName(product)"/></small>
-                            <small class="ar_scrap_product_price"><i class="fa fa-money"/> <t t-esc="formatUnitPrice(product)"/></small>
                             <small t-att-class="product.exists_in_sap ? 'ar_scrap_sap_badge is-sap' : 'ar_scrap_sap_badge is-non-sap'">
                                 <i t-att-class="product.exists_in_sap ? 'fa fa-check-circle' : 'fa fa-minus-circle'"/>
                                 <t t-esc="product.exists_in_sap ? 'Existe dans SAP' : 'Hors SAP'"/>
                             </small>
                             <p t-esc="product.description || 'Aucune description'"/>
-                            <button t-if="product.description" type="button" class="ar_scrap_description_button" t-on-click.stop="() => showDescription(product)">
+                            <button t-if="product.description || product.bomLines.length" type="button" class="ar_scrap_description_button" t-on-click.stop="() => showDescription(product)">
                                 <i class="fa fa-eye"/> Voir la description
                             </button>
-                            <span><i class="fa fa-plus-circle"/> Ajouter au panier</span>
+                            <span><i class="fa fa-plus-circle"/> Ajouter à la liste</span>
                         </div>
-                        <span t-if="state.cart[product.id]" class="ar_scrap_cart_badge" t-esc="state.cart[product.id].quantity"/>
+                        <span t-if="getProductCartQuantity(product.id)" class="ar_scrap_cart_badge" t-esc="getProductCartQuantity(product.id)"/>
                     </article>
                 </div>
             </main>
@@ -145,7 +196,89 @@
                         </div>
                         <button type="button" t-on-click="closeDescription" title="Fermer"><i class="fa fa-times"/></button>
                     </header>
-                    <div class="ar_scrap_description_content" t-esc="state.descriptionProduct.description"/>
+                    <div class="ar_scrap_description_content">
+                        <div class="ar_scrap_description_intro">
+                            <div t-if="getProductLargeImage(state.descriptionProduct)" class="ar_scrap_description_image">
+                                <img class="ar_scrap_description_image_main" t-att-src="getProductLargeImage(state.descriptionProduct)" t-att-alt="state.descriptionProduct.name"/>
+                            </div>
+                            <div t-else="" class="ar_scrap_description_image ar_scrap_description_image_empty">
+                                <i class="fa fa-cube"/>
+                            </div>
+                            <section class="ar_scrap_full_description">
+                                <span class="ar_scrap_eyebrow">Fiche référence</span>
+                                <h4>Description</h4>
+                                <p t-esc="state.descriptionProduct.description || 'Aucune description'"/>
+                                <div class="ar_scrap_description_meta">
+                                    <span t-if="getZoneName(state.descriptionProduct)" class="ar_scrap_description_meta_item"><i class="fa fa-map-marker"/> <t t-esc="getZoneName(state.descriptionProduct)"/></span>
+                                    <span t-att-class="state.descriptionProduct.exists_in_sap ? 'ar_scrap_sap_badge is-sap' : 'ar_scrap_sap_badge is-non-sap'">
+                                        <i t-att-class="state.descriptionProduct.exists_in_sap ? 'fa fa-check-circle' : 'fa fa-minus-circle'"/>
+                                        <t t-esc="state.descriptionProduct.exists_in_sap ? 'Existe dans SAP' : 'Hors SAP'"/>
+                                    </span>
+                                </div>
+                            </section>
+                        </div>
+                        <section class="ar_scrap_bom_section">
+                            <h4>BOM</h4>
+                            <div t-if="state.descriptionProduct.bomLines.length" class="ar_scrap_bom_table_wrap">
+                                <table class="ar_scrap_bom_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Référence</th>
+                                            <th>Quantité</th>
+                                            <th>Description</th>
+                                            <th>Unité</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="state.descriptionProduct.bomLines" t-as="bomLine" t-key="bomLine.id">
+                                            <td t-esc="bomLine.reference"/>
+                                            <td t-esc="formatQuantity(bomLine.quantity)"/>
+                                            <td t-esc="bomLine.description || '—'"/>
+                                            <td t-esc="bomLine.unit === 'pce' ? 'PCE' : 'mm'"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-else="" class="ar_scrap_bom_empty">Aucune ligne BOM configurée.</div>
+                        </section>
+                    </div>
+                </section>
+            </div>
+
+            <div t-if="state.defectPickerLineId" class="ar_scrap_defect_overlay" t-on-click="closeDefectPicker">
+                <section class="ar_scrap_defect_modal" role="dialog" aria-modal="true" t-on-click.stop="() => null">
+                    <header>
+                        <div>
+                            <span class="ar_scrap_eyebrow">Sélection visuelle</span>
+                            <h3>Choisir le type de défaut</h3>
+                        </div>
+                        <button type="button" t-on-click="closeDefectPicker" title="Fermer"><i class="fa fa-times"/></button>
+                    </header>
+                    <div class="ar_scrap_defect_search">
+                        <i class="fa fa-search"/>
+                        <input type="search" placeholder="Rechercher un défaut..." t-att-value="state.defectSearch" t-on-input="onDefectSearch"/>
+                    </div>
+                    <div class="ar_scrap_defect_grid">
+                        <button t-foreach="filteredDefectTypes" t-as="defectType" t-key="defectType.id" type="button" class="ar_scrap_defect_card" t-on-click="() => selectDefectType(defectType)">
+                            <div class="ar_scrap_defect_card_image">
+                                <img t-if="getDefectImage(defectType)" t-att-src="getDefectImage(defectType)" t-att-alt="defectType.name"/>
+                                <i t-else="" class="fa fa-exclamation-triangle"/>
+                            </div>
+                            <div class="ar_scrap_defect_card_info">
+                                <strong t-esc="defectType.name"/>
+                                <p t-esc="defectType.description || 'Aucune description'"/>
+                            </div>
+                            <span><i class="fa fa-check-circle"/> Choisir</span>
+                        </button>
+                        <button type="button" class="ar_scrap_defect_card ar_scrap_defect_card_other" t-on-click="() => selectDefectType('other')">
+                            <div class="ar_scrap_defect_card_image"><span class="ar_scrap_defect_other_emoji">❓</span></div>
+                            <div class="ar_scrap_defect_card_info">
+                                <strong>Autre</strong>
+                                <p>Défaut non présent dans la liste. Un commentaire sera obligatoire.</p>
+                            </div>
+                            <span><i class="fa fa-check-circle"/> Choisir</span>
+                        </button>
+                    </div>
                 </section>
             </div>
         </div>
