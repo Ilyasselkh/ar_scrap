@@ -1,5 +1,6 @@
 from . import scrap_documentation
 from . import scrap_approval_wizard
+from . import scrap_modify_wizard
 from . import scrap_bom
 from . import scrap_defect_type
 from . import scrap_order

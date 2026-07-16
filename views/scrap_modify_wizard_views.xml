@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ar_scrap_modify_wizard_form" model="ir.ui.view">
+        <field name="name">ar.scrap.modify.wizard.form</field>
+        <field name="model">ar.scrap.modify.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Confirmer la modification">
+                <field name="order_id" invisible="True"/>
+                <div class="ar_scrap_confirmation ar_scrap_confirmation_modify">
+                    <i class="fa fa-pencil-square-o"/>
+                    <div>
+                        <h3>Remettre la demande dans la liste</h3>
+                        <p>
+                            Cette action va ouvrir la liste avec les lignes de la demande
+                            <strong><field name="order_id" nolabel="1"/></strong>.
+                            Vous pourrez modifier les quantites, les defauts et les informations generales avant de resoumettre la demande.
+                        </p>
+                    </div>
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object" string="Modifier"
+                            class="btn-primary"/>
+                    <button string="Annuler" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

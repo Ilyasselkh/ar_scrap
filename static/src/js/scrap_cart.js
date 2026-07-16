@@ -40,6 +40,7 @@ export class ArScrapCart extends Component {
         this.removeLine = this.removeLine.bind(this);
         this.clearCart = this.clearCart.bind(this);
         this.validateCart = this.validateCart.bind(this);
+        this.restoreOrderToCart = this.restoreOrderToCart.bind(this);
         this.showDescription = this.showDescription.bind(this);
         this.closeDescription = this.closeDescription.bind(this);
         this.formatUnitPrice = this.formatUnitPrice.bind(this);
@@ -64,6 +65,8 @@ export class ArScrapCart extends Component {
             scrapDateTime: nowAsLocalDateTime(),
             notes: "",
             attachments: [],
+            modifyingOrderId: false,
+            modifyingOrderName: "",
             descriptionProduct: false,
             loading: true,
             validating: false,
@@ -127,9 +130,62 @@ export class ArScrapCart extends Component {
                 { order: "valid_from desc, name, id" }
             );
             this.state.products = products;
+            const restoreOrderId = this.props?.action?.context?.restore_scrap_order_id;
+            if (restoreOrderId) {
+                await this.restoreOrderToCart(restoreOrderId);
+            }
         } finally {
             this.state.loading = false;
         }
+    }
+
+    async restoreOrderToCart(orderId) {
+        const payload = await this.orm.call(
+            "ar.scrap.order",
+            "get_cart_restore_payload",
+            [[orderId]]
+        );
+        this.clearCart();
+        this.state.modifyingOrderId = payload.order_id;
+        this.state.modifyingOrderName = payload.name || "";
+        this.state.shift = payload.shift || "";
+        this.state.productionOrderId = payload.production_order_id ? String(payload.production_order_id) : "";
+        this.state.scrapDateTime = payload.scrap_datetime || nowAsLocalDateTime();
+        this.state.notes = payload.notes || "";
+        this.state.attachments = [];
+        this.nextAttachmentId = 0;
+
+        for (const restoredLine of payload.lines || []) {
+            const product = this.state.products.find((item) => item.id === restoredLine.product_id);
+            const lineId = `line_${++this.nextCartLineId}`;
+            const numericDefectTypeId = Number(restoredLine.defect_type_id);
+            const defectType = Number.isInteger(numericDefectTypeId)
+                ? this.state.defectTypes.find((item) => item.id === numericDefectTypeId)
+                : false;
+            this.state.cart[lineId] = {
+                lineId,
+                productId: restoredLine.product_id,
+                name: product?.name || restoredLine.product_name,
+                unitPrice: restoredLine.unit_price,
+                currencyName: restoredLine.currency_name,
+                companyUnitPrice: Number(restoredLine.company_unit_price || 0),
+                companyCurrencyName: restoredLine.company_currency_name,
+                companyCurrencyDecimals: restoredLine.company_currency_decimal_places ?? 2,
+                description: product?.description || restoredLine.product_description,
+                existsInSap: Boolean(restoredLine.exists_in_sap),
+                defectTypeId: restoredLine.defect_type_id === "other" ? "other" : String(restoredLine.defect_type_id || ""),
+                defectTypeName: restoredLine.defect_type_name || "",
+                defectTypeImage: defectType ? this.getDefectImage(defectType) : false,
+                defectTypeEmoji: restoredLine.defect_type_id === "other" ? "?" : "",
+                defectComment: restoredLine.defect_comment || "",
+                quantity: Number(restoredLine.quantity || 1),
+                confirmed: false,
+            };
+        }
+        this.notification.add(
+            `${_t("Demande chargee dans la liste")} : ${this.state.modifyingOrderName}`,
+            { type: "info", title: _t("Modification en cours") }
+        );
     }
 
     get filteredProducts() {
@@ -598,6 +654,7 @@ export class ArScrapCart extends Component {
                     this.state.notes,
                     this.state.attachments.map(({ name, mimetype, data }) => ({ name, mimetype, data })),
                     this.state.productionOrderId,
+                    this.state.modifyingOrderId || false,
                 ]
             );
             this.clearCart();
@@ -606,6 +663,8 @@ export class ArScrapCart extends Component {
             this.state.scrapDateTime = nowAsLocalDateTime();
             this.state.notes = "";
             this.state.attachments = [];
+            this.state.modifyingOrderId = false;
+            this.state.modifyingOrderName = "";
             this.nextAttachmentId = 0;
             const isDirectlyValidated = result.state === "validated";
             const message = isDirectlyValidated

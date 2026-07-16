@@ -16,3 +16,4 @@ access_ar_scrap_order_user,ar.scrap.order user,model_ar_scrap_order,base.group_u
 access_ar_scrap_order_line_user,ar.scrap.order.line user,model_ar_scrap_order_line,base.group_user,1,0,1,0
 access_ar_scrap_documentation_user,ar.scrap.documentation user,model_ar_scrap_documentation,base.group_user,1,1,1,1
 access_ar_scrap_approval_wizard_user,ar.scrap.approval.wizard user,model_ar_scrap_approval_wizard,base.group_user,1,1,1,1
+access_ar_scrap_modify_wizard_user,ar.scrap.modify.wizard user,model_ar_scrap_modify_wizard,base.group_user,1,1,1,1

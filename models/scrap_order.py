@@ -287,6 +287,36 @@ class ArScrapOrder(models.Model):
         self._check_current_validator()
         return self._open_decision_wizard("refuse")
 
+    def action_modify(self):
+        self.ensure_one()
+        view = self.env.ref("ar_scrap.view_ar_scrap_modify_wizard_form")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Confirmer la modification"),
+            "res_model": "ar.scrap.modify.wizard",
+            "view_mode": "form",
+            "views": [(view.id, "form")],
+            "target": "new",
+            "context": {
+                "default_order_id": self.id,
+            },
+        }
+
+    def action_reset_to_cart(self):
+        self.ensure_one()
+        self.sudo().message_post(
+            body=_("Demande remise en modification par %(user)s.", user=self.env.user.name),
+            author_id=self.env.user.partner_id.id,
+        )
+        return {
+            "type": "ir.actions.client",
+            "name": _("Modifier la declaration SCRAP"),
+            "tag": "ar_scrap.cart",
+            "context": {
+                "restore_scrap_order_id": self.id,
+            },
+        }
+
     def _open_decision_wizard(self, decision):
         self.ensure_one()
         view = self.env.ref("ar_scrap.view_ar_scrap_approval_wizard_form")
@@ -358,6 +388,43 @@ class ArScrapOrder(models.Model):
         )
         return {"type": "ir.actions.client", "tag": "reload"}
 
+    def get_cart_restore_payload(self):
+        self.ensure_one()
+        localized_scrap_date = ""
+        if self.scrap_date:
+            localized_scrap_date = fields.Datetime.context_timestamp(self, self.scrap_date).strftime("%Y-%m-%dT%H:%M")
+        lines = []
+        for line in self.line_ids:
+            defect_type_id = line.defect_type_id.id if line.defect_type_id else "other"
+            lines.append(
+                {
+                    "product_id": line.product_id.id,
+                    "product_name": line.product_name,
+                    "product_description": line.product_description,
+                    "unit_price": line.product_id.unit_price,
+                    "currency_id": line.product_id.currency_id.id,
+                    "currency_name": line.product_id.currency_id.display_name,
+                    "company_unit_price": line.unit_price,
+                    "company_currency_id": self.currency_id.id,
+                    "company_currency_name": self.currency_id.display_name,
+                    "company_currency_decimal_places": self.currency_id.decimal_places,
+                    "exists_in_sap": line.product_id.exists_in_sap,
+                    "defect_type_id": defect_type_id,
+                    "defect_type_name": line.defect_type_name,
+                    "defect_comment": line.defect_comment or "",
+                    "quantity": line.quantity,
+                }
+            )
+        return {
+            "order_id": self.id,
+            "name": self.name,
+            "shift": self.shift or "",
+            "production_order_id": self.production_order_id.id or False,
+            "scrap_datetime": localized_scrap_date,
+            "notes": self.notes or "",
+            "lines": lines,
+        }
+
     @api.model_create_multi
     def create(self, vals_list):
         sequence = self.env["ir.sequence"]
@@ -377,6 +444,7 @@ class ArScrapOrder(models.Model):
         notes=None,
         attachments=None,
         production_order_id=None,
+        source_order_id=None,
     ):
         """Validate a cart in one transaction and return the archive record."""
         if not isinstance(cart_lines, list) or not cart_lines:
@@ -563,7 +631,24 @@ class ArScrapOrder(models.Model):
                     "state": self._get_first_validation_state(rule),
                 }
             )
-        order = self.create(values)
+        source_order = False
+        if source_order_id:
+            source_order = self.browse(int(source_order_id)).exists()
+            if not source_order:
+                raise ValidationError(_("La declaration a modifier est introuvable."))
+
+        if source_order:
+            source_order.sudo().approval_history_ids.unlink()
+            source_order.sudo().write(
+                {
+                    **values,
+                    "line_ids": [fields.Command.clear()] + commands,
+                    "refusal_reason": False,
+                }
+            )
+            order = source_order
+        else:
+            order = self.create(values)
         if validated_attachments:
             created_attachments = self.env["ir.attachment"].sudo().create(
                 [
@@ -576,6 +661,11 @@ class ArScrapOrder(models.Model):
                 ]
             )
             order.sudo().write({"attachment_ids": [fields.Command.set(created_attachments.ids)]})
+        if source_order:
+            order.sudo().message_post(
+                body=_("Demande modifiee et resoumise par %(user)s.", user=self.env.user.name),
+                author_id=self.env.user.partner_id.id,
+            )
         order._notify_current_validators()
         return {
             "id": order.id,
