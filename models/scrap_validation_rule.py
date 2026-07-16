@@ -6,6 +6,7 @@ class ArScrapValidationRule(models.Model):
     _name = "ar.scrap.validation.rule"
     _description = "Règle de validation scrap"
     _order = "quantity_from, quantity_to, sequence, id"
+    _inherit = ["mail.thread"]
 
     name = fields.Char(string="Règle", compute="_compute_name", store=True)
     currency_id = fields.Many2one(
@@ -14,18 +15,21 @@ class ArScrapValidationRule(models.Model):
         required=True,
         readonly=True,
         default=lambda self: self.env.company.currency_id,
+        tracking=True,
     )
     quantity_from = fields.Monetary(
         string="Valeur de",
         currency_field="currency_id",
         required=True,
         default=0.0,
+        tracking=True,
     )
     quantity_to = fields.Monetary(
         string="Valeur à",
         currency_field="currency_id",
         required=True,
         default=0.0,
+        tracking=True,
     )
     supervisor_ids = fields.Many2many(
         "res.users",
@@ -34,6 +38,7 @@ class ArScrapValidationRule(models.Model):
         "user_id",
         string="Superviseurs",
         domain="[('share', '=', False)]",
+        tracking=True,
     )
     manager_ids = fields.Many2many(
         "res.users",
@@ -42,6 +47,7 @@ class ArScrapValidationRule(models.Model):
         "user_id",
         string="Managers",
         domain="[('share', '=', False)]",
+        tracking=True,
     )
     md_ids = fields.Many2many(
         "res.users",
@@ -50,9 +56,10 @@ class ArScrapValidationRule(models.Model):
         "user_id",
         string="MD",
         domain="[('share', '=', False)]",
+        tracking=True,
     )
-    sequence = fields.Integer(string="Séquence", default=10)
-    active = fields.Boolean(string="Active", default=True)
+    sequence = fields.Integer(string="Séquence", default=10, tracking=True)
+    active = fields.Boolean(string="Active", default=True, tracking=True)
 
     @api.depends("quantity_from", "quantity_to", "currency_id")
     def _compute_name(self):

@@ -47,6 +47,7 @@
                         Les limites de valeur sont incluses, dans la devise de la société, et deux règles actives ne peuvent pas se chevaucher.
                     </div>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>

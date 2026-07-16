@@ -27,6 +27,7 @@
                         <field name="active" widget="boolean_toggle"/>
                     </group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>

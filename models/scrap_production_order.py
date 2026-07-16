@@ -6,12 +6,13 @@ class ArScrapProductionOrder(models.Model):
     _name = "ar.scrap.production.order"
     _description = "Ordre de fabrication pour déclaration SCRAP"
     _order = "valid_from desc, name, id"
+    _inherit = ["mail.thread"]
 
-    name = fields.Char(string="Numéro OF", required=True, index=True)
-    quantity = fields.Float(string="Quantité", required=True, digits=(16, 3))
-    valid_from = fields.Date(string="Période de", required=True)
-    valid_to = fields.Date(string="Période à", required=True)
-    active = fields.Boolean(string="Actif", default=True)
+    name = fields.Char(string="Numéro OF", required=True, index=True, tracking=True)
+    quantity = fields.Float(string="Quantité", required=True, digits=(16, 3), tracking=True)
+    valid_from = fields.Date(string="Période de", required=True, tracking=True)
+    valid_to = fields.Date(string="Période à", required=True, tracking=True)
+    active = fields.Boolean(string="Actif", default=True, tracking=True)
 
     _name_unique = models.Constraint(
         "UNIQUE(name)",

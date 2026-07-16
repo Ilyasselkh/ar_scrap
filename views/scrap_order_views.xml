@@ -25,9 +25,9 @@
         <field name="arch" type="xml">
             <form string="Opération de scrap" create="false" edit="false" delete="false" class="ar_scrap_order_form">
                 <header>
-                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary"/>
                     <button name="action_approve" type="object" string="Valider" icon="fa-check" class="btn-success ar_scrap_approve_btn" invisible="not can_current_user_approve"/>
                     <button name="action_refuse" type="object" string="Refuser" icon="fa-times" class="btn-danger ar_scrap_refuse_btn" invisible="not can_current_user_approve"/>
+                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary"/>
                     <field name="state" widget="statusbar" statusbar_visible="pending_supervisor,pending_manager,pending_md,validated,refused"/>
                 </header>
                 <sheet class="ar_scrap_order_sheet">

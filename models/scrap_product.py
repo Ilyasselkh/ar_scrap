@@ -6,8 +6,9 @@ class ArScrapProduct(models.Model):
     _name = "ar.scrap.product"
     _description = "Référence scrap"
     _order = "sequence, name, id"
+    _inherit = ["mail.thread"]
 
-    name = fields.Char(string="Nom / Référence", required=True, index=True)
+    name = fields.Char(string="Nom / Référence", required=True, index=True, tracking=True)
     image_1920 = fields.Image(string="Image", max_width=1920, max_height=1920)
     image_128 = fields.Image(related="image_1920", max_width=128, max_height=128, store=True)
     length = fields.Float(string="Longueur (mm)", default=0.0, digits=(16, 3))
@@ -21,11 +22,13 @@ class ArScrapProduct(models.Model):
         string="Devise",
         required=True,
         default=lambda self: self.env.company.currency_id,
+        tracking=True,
     )
     unit_price = fields.Monetary(
         string="Prix unitaire",
         currency_field="currency_id",
         default=0.0,
+        tracking=True,
     )
     company_currency_id = fields.Many2one(
         "res.currency",
@@ -41,16 +44,17 @@ class ArScrapProduct(models.Model):
         string="Décimales de la devise société",
         compute="_compute_company_price",
     )
-    description = fields.Text(string="Description")
-    exists_in_sap = fields.Boolean(string="Référence existe dans SAP", default=False)
+    description = fields.Text(string="Description", tracking=True)
+    exists_in_sap = fields.Boolean(string="Référence existe dans SAP", default=False, tracking=True)
     zone_id = fields.Many2one(
         "ar.scrap.zone",
         string="Zone de scrap",
         ondelete="set null",
         index=True,
+        tracking=True,
     )
-    sequence = fields.Integer(default=10)
-    active = fields.Boolean(default=True)
+    sequence = fields.Integer(default=10, tracking=True)
+    active = fields.Boolean(default=True, tracking=True)
 
     _name_unique = models.Constraint(
         "UNIQUE(name)",
@@ -78,3 +82,10 @@ class ArScrapProduct(models.Model):
         for product in self:
             if product.unit_price < 0:
                 raise ValidationError(_("Le prix unitaire ne peut pas être négatif."))
+
+    def write(self, vals):
+        image_changed = "image_1920" in vals
+        result = super().write(vals)
+        if image_changed:
+            self.message_post(body=_("Image de la référence modifiée."))
+        return result

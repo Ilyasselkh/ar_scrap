@@ -38,6 +38,7 @@
                         L'OF sera proposé dans la Déclaration SCRAP uniquement lorsque la date sélectionnée se trouve dans cette période et que l'OF est actif.
                     </div>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
