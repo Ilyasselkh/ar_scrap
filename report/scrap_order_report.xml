@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_ar_scrap_order" model="ir.actions.report">
+        <field name="name">Rapport de déclaration SCRAP</field>
+        <field name="model">ar.scrap.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ar_scrap.report_ar_scrap_order</field>
+        <field name="report_file">ar_scrap.report_ar_scrap_order</field>
+        <field name="paperformat_id" ref="ar_scrap.paperformat_ar_scrap_report"/>
+        <field name="binding_model_id" ref="model_ar_scrap_order"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Rapport SCRAP - %s' % (object.name or '')</field>
+    </record>
+
+    <template id="report_ar_scrap_order">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="ar_scrap.report_araymond_external_layout">
+                    <t t-set="show_descriptions" t-value="o.line_ids.filtered('product_description')"/>
+                    <t t-set="show_defect_images" t-value="o.line_ids.filtered('defect_type_image_snapshot') or o.line_ids.filtered('defect_type_image')"/>
+                    <t t-set="show_defect_comments" t-value="o.line_ids.filtered('defect_comment')"/>
+                    <t t-set="show_lots" t-value="o.line_ids.filtered('lot')"/>
+
+                    <div class="page ar_scrap_report">
+                        <style>
+                            .ar_scrap_report { color: #253044; font-size: 12px; }
+                            .ar_scrap_report .report_hero { background: #68415f; color: white; padding: 20px 24px; border-radius: 10px; margin-bottom: 18px; }
+                            .ar_scrap_report .report_hero h1 { margin: 3px 0; font-size: 25px; color: white; }
+                            .ar_scrap_report .report_hero .eyebrow { color: #9ff4ef; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+                            .ar_scrap_report .status { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 700; }
+                            .ar_scrap_report .status_validated { background: #dff5e8; color: #167548; }
+                            .ar_scrap_report .status_refused { background: #fde3e5; color: #b42335; }
+                            .ar_scrap_report .status_pending { background: #fff0cc; color: #8a5a00; }
+                            .ar_scrap_report .section_title { border-left: 4px solid #00a6a6; padding-left: 9px; margin: 20px 0 9px; font-size: 15px; font-weight: 700; color: #253044; }
+                            .ar_scrap_report .info_table { width: 100%; border-collapse: separate; border-spacing: 8px; margin: 0 -8px; }
+                            .ar_scrap_report .info_card { border: 1px solid #d9e0e8; border-radius: 8px; padding: 10px 12px; width: 33%; vertical-align: top; }
+                            .ar_scrap_report .info_label { color: #7b8494; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+                            .ar_scrap_report .info_value { display: block; margin-top: 3px; font-weight: 700; color: #3c315a; }
+                            .ar_scrap_report .data_table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                            .ar_scrap_report .data_table th { background: #edf1f5; color: #536074; padding: 7px 6px; font-size: 9px; text-transform: uppercase; border: 1px solid #d9e0e8; }
+                            .ar_scrap_report .data_table td { padding: 7px 6px; border: 1px solid #d9e0e8; vertical-align: top; word-wrap: break-word; }
+                            .ar_scrap_report .numeric { text-align: right; white-space: nowrap; }
+                            .ar_scrap_report .defect_image { width: 46px; height: 46px; object-fit: contain; border-radius: 7px; background: #f4f6f8; }
+                            .ar_scrap_report .text_box { border: 1px solid #d9e0e8; border-left: 4px solid #68415f; border-radius: 7px; padding: 10px 12px; white-space: pre-wrap; }
+                        </style>
+
+                        <div class="report_hero">
+                            <span class="eyebrow">Rapport de déclaration SCRAP</span>
+                            <h1 t-esc="o.name"/>
+                            <div>
+                                <span t-if="o.state == 'validated'" class="status status_validated">Validée</span>
+                                <span t-elif="o.state == 'refused'" class="status status_refused">Refusée</span>
+                                <span t-else="" class="status status_pending" t-field="o.state"/>
+                            </div>
+                        </div>
+
+                        <div class="section_title">Informations générales</div>
+                        <table class="info_table">
+                            <tr>
+                                <td class="info_card" t-if="o.user_id">
+                                    <span class="info_label">Déclaré par</span>
+                                    <span class="info_value" t-field="o.user_id"/>
+                                </td>
+                                <td class="info_card" t-if="o.shift">
+                                    <span class="info_label">Shift</span>
+                                    <span class="info_value" t-field="o.shift"/>
+                                </td>
+                                <td class="info_card" t-if="o.production_order_number">
+                                    <span class="info_label">OF</span>
+                                    <span class="info_value" t-esc="o.production_order_number"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="info_card" t-if="o.scrap_date">
+                                    <span class="info_label">Date et heure</span>
+                                    <span class="info_value" t-field="o.scrap_date"/>
+                                </td>
+                                <td class="info_card" t-if="o.total_amount is not False">
+                                    <span class="info_label">Montant total</span>
+                                    <span class="info_value" t-field="o.total_amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                                <td class="info_card" t-if="o.validated_at">
+                                    <span class="info_label">Créée le</span>
+                                    <span class="info_value" t-field="o.validated_at"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <t t-if="o.line_ids">
+                            <div class="section_title">Références scrapées</div>
+                            <table class="data_table">
+                                <thead>
+                                    <tr>
+                                        <th>Référence</th>
+                                        <th t-if="show_descriptions">Description</th>
+                                        <th class="numeric">Quantité</th>
+                                        <th class="numeric">Montant total</th>
+                                        <th>Type de défaut</th>
+                                        <th t-if="show_defect_images">Image du défaut</th>
+                                        <th t-if="show_defect_comments">Commentaire</th>
+                                        <th t-if="show_lots">LOT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="o.line_ids" t-as="line">
+                                        <td t-esc="line.product_name"/>
+                                        <td t-if="show_descriptions" t-esc="line.product_description or ''"/>
+                                        <td class="numeric"><span t-field="line.quantity"/></td>
+                                        <td class="numeric"><span t-field="line.total_amount" t-options="{'widget': 'monetary', 'display_currency': line.currency_id}"/></td>
+                                        <td t-esc="line.defect_type_name"/>
+                                        <td t-if="show_defect_images" style="text-align: center;">
+                                            <t t-set="defect_image" t-value="line.defect_type_image_snapshot or line.defect_type_image"/>
+                                            <img t-if="defect_image" class="defect_image" t-att-src="image_data_uri(defect_image)" alt="Défaut"/>
+                                            <span t-else="">❓</span>
+                                        </td>
+                                        <td t-if="show_defect_comments" t-esc="line.defect_comment or ''"/>
+                                        <td t-if="show_lots" t-esc="line.lot or ''"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="o.approval_history_ids">
+                            <div class="section_title">Historique des validations</div>
+                            <table class="data_table">
+                                <thead>
+                                    <tr>
+                                        <th>Date et heure</th>
+                                        <th>Niveau</th>
+                                        <th>Validateur</th>
+                                        <th>Décision</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="o.approval_history_ids.sorted('decision_date')" t-as="history">
+                                        <td><span t-field="history.decision_date"/></td>
+                                        <td><span t-field="history.level"/></td>
+                                        <td><span t-field="history.validator_id"/></td>
+                                        <td><span t-field="history.decision"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="o.notes">
+                            <div class="section_title">Commentaire général</div>
+                            <div class="text_box" t-esc="o.notes"/>
+                        </t>
+
+                        <t t-if="o.refusal_reason">
+                            <div class="section_title">Motif de refus</div>
+                            <div class="text_box" t-esc="o.refusal_reason"/>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

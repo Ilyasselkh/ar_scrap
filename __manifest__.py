@@ -19,6 +19,8 @@
         "views/scrap_approval_wizard_views.xml",
         "views/scrap_modify_wizard_views.xml",
         "views/scrap_order_views.xml",
+        "report/scrap_report_layout.xml",
+        "report/scrap_order_report.xml",
         "views/scrap_documentation_views.xml",
         "views/scrap_menus.xml",
     ],

@@ -1,7 +1,9 @@
 import base64
 import binascii
 
-from odoo import api, fields, models, _
+from markupsafe import Markup
+
+from odoo import api, fields, models, tools, _
 from odoo.exceptions import AccessError, ValidationError
 
 
@@ -28,9 +30,8 @@ class ArScrapOrder(models.Model):
     )
     validated_at = fields.Datetime(
         string="Date de validation",
-        required=True,
         readonly=True,
-        default=fields.Datetime.now,
+        copy=False,
     )
     shift = fields.Selection(
         [
@@ -40,31 +41,37 @@ class ArScrapOrder(models.Model):
         ],
         string="Shift",
         readonly=True,
+        tracking=True,
     )
     scrap_date = fields.Datetime(
         string="Date et heure",
         readonly=True,
+        tracking=True,
     )
     production_order_id = fields.Many2one(
         "ar.scrap.production.order",
         string="OF",
         readonly=True,
         ondelete="restrict",
+        tracking=True,
     )
-    production_order_number = fields.Char(string="Numéro OF", readonly=True)
+    production_order_number = fields.Char(string="Numéro OF", readonly=True, tracking=True)
     production_order_quantity = fields.Float(
         string="Quantité OF",
         readonly=True,
         digits=(16, 3),
+        tracking=True,
     )
     notes = fields.Text(
         string="Commentaire général",
         readonly=True,
+        tracking=True,
     )
     refusal_reason = fields.Text(
         string="Motif de refus",
         readonly=True,
         copy=False,
+        tracking=True,
     )
     attachment_ids = fields.Many2many(
         "ir.attachment",
@@ -74,9 +81,11 @@ class ArScrapOrder(models.Model):
         string="Pièces jointes",
         readonly=True,
         copy=False,
+        tracking=True,
     )
     state = fields.Selection(
         [
+            ("draft", "Brouillon"),
             ("pending_supervisor", "En attente Superviseur"),
             ("pending_manager", "En attente Manager"),
             ("pending_md", "En attente MD"),
@@ -85,15 +94,17 @@ class ArScrapOrder(models.Model):
         ],
         string="Statut",
         required=True,
-        default="validated",
+        default="draft",
         readonly=True,
         index=True,
+        tracking=True,
     )
     validation_rule_id = fields.Many2one(
         "ar.scrap.validation.rule",
         string="Règle appliquée",
         readonly=True,
         ondelete="restrict",
+        tracking=True,
     )
     supervisor_validator_ids = fields.Many2many(
         "res.users",
@@ -126,6 +137,7 @@ class ArScrapOrder(models.Model):
         readonly=True,
     )
     can_current_user_approve = fields.Boolean(compute="_compute_can_current_user_approve")
+    can_current_user_edit_draft = fields.Boolean(compute="_compute_can_current_user_edit_draft")
     line_ids = fields.One2many(
         "ar.scrap.order.line",
         "order_id",
@@ -193,6 +205,13 @@ class ArScrapOrder(models.Model):
             validators = order._get_current_validators()
             order.can_current_user_approve = user in validators
 
+    @api.depends("state", "user_id")
+    @api.depends_context("uid")
+    def _compute_can_current_user_edit_draft(self):
+        user = self.env.user
+        for order in self:
+            order.can_current_user_edit_draft = order.state == "draft" and order.user_id == user
+
     def _get_current_validators(self):
         self.ensure_one()
         field_by_state = {
@@ -223,6 +242,77 @@ class ArScrapOrder(models.Model):
         value = f"{self.total_amount:,.{decimals}f}"
         value = value.replace(",", " ").replace(".", ",")
         return f"{value} {self.currency_id.symbol or self.currency_id.name}".strip()
+
+    def get_report_header_logo(self):
+        self.ensure_one()
+        with tools.file_open(
+            "ar_scrap/static/src/img/araymond_report_logo_header.png",
+            "rb",
+        ) as logo_file:
+            encoded_logo = base64.b64encode(logo_file.read()).decode("ascii")
+        return f"data:image/png;base64,{encoded_logo}"
+
+    def _format_report_tracking_value(self, value, field_info):
+        field_type = field_info.get("fieldType")
+        if field_type == "boolean":
+            return _("Oui") if value else _("Non")
+        if value is False or value is None or value == "":
+            return _("Vide")
+        if field_type == "monetary":
+            currency = self.env["res.currency"].browse(field_info.get("currencyId")).exists()
+            decimals = currency.decimal_places if currency else 2
+            formatted = f"{float(value):,.{decimals}f}".replace(",", " ").replace(".", ",")
+            return f"{formatted} {currency.symbol or currency.name}".strip() if currency else formatted
+        if field_type in {"float", "integer"}:
+            digits = field_info.get("floatPrecision")
+            decimals = digits[-1] if isinstance(digits, (list, tuple)) and digits else 0
+            return f"{float(value):,.{decimals}f}".replace(",", " ").replace(".", ",")
+        if field_type in {"date", "datetime"}:
+            try:
+                raw_value = str(value).rstrip("Z")
+                parsed_value = fields.Datetime.to_datetime(raw_value)
+                if field_type == "datetime":
+                    parsed_value = fields.Datetime.context_timestamp(self, parsed_value)
+                    return parsed_value.strftime("%d/%m/%Y %H:%M")
+                return parsed_value.strftime("%d/%m/%Y")
+            except (TypeError, ValueError):
+                return str(value)
+        return str(value)
+
+    def get_report_traceability(self):
+        self.ensure_one()
+        traceability = []
+        messages = sorted(
+            self.sudo().message_ids,
+            key=lambda message: (message.date or fields.Datetime.now(), message.id),
+        )
+        for message in messages:
+            body = tools.html2plaintext(message.body or "").strip()
+            changes = []
+            for tracking in message.sudo().tracking_value_ids._tracking_value_format():
+                field_info = tracking.get("fieldInfo", {})
+                changes.append(
+                    {
+                        "field": field_info.get("changedField") or _("Champ modifié"),
+                        "old": self._format_report_tracking_value(tracking.get("oldValue"), field_info),
+                        "new": self._format_report_tracking_value(tracking.get("newValue"), field_info),
+                    }
+                )
+            if not body and not changes:
+                continue
+            localized_date = fields.Datetime.context_timestamp(
+                self,
+                message.date or fields.Datetime.now(),
+            )
+            traceability.append(
+                {
+                    "date": localized_date.strftime("%d/%m/%Y %H:%M"),
+                    "author": message.author_id.name or _("Système"),
+                    "body": body,
+                    "changes": changes,
+                }
+            )
+        return traceability
 
     def _notify_current_validators(self):
         """Queue one validation email for all users assigned to the current step."""
@@ -287,6 +377,25 @@ class ArScrapOrder(models.Model):
         self._check_current_validator()
         return self._open_decision_wizard("refuse")
 
+    def action_print_report(self):
+        self.ensure_one()
+        if self.state == "draft":
+            raise ValidationError(_("Un brouillon ne peut pas encore être imprimé."))
+        return self.env.ref("ar_scrap.action_report_ar_scrap_order").report_action(self)
+
+    def action_continue_draft(self):
+        self.ensure_one()
+        if self.state != "draft":
+            raise ValidationError(_("Seule une déclaration en brouillon peut être reprise."))
+        if self.user_id != self.env.user:
+            raise AccessError(_("Vous ne pouvez reprendre que vos propres brouillons."))
+        return {
+            "type": "ir.actions.client",
+            "name": _("Continuer la déclaration SCRAP"),
+            "tag": "ar_scrap.cart",
+            "context": {"restore_scrap_order_id": self.id},
+        }
+
     def action_modify(self):
         self.ensure_one()
         view = self.env.ref("ar_scrap.view_ar_scrap_modify_wizard_form")
@@ -304,18 +413,31 @@ class ArScrapOrder(models.Model):
 
     def action_reset_to_cart(self):
         self.ensure_one()
-        self.sudo().message_post(
-            body=_("Demande remise en modification par %(user)s.", user=self.env.user.name),
-            author_id=self.env.user.partner_id.id,
+        if self.state == "draft":
+            raise ValidationError(_("Cette déclaration est déjà en brouillon."))
+        original_declarant = self.user_id
+        requester = self.env.user
+        self.sudo().write(
+            {
+                "state": "draft",
+                "validated_at": False,
+                "validation_rule_id": False,
+                "supervisor_validator_ids": [fields.Command.clear()],
+                "manager_validator_ids": [fields.Command.clear()],
+                "md_validator_ids": [fields.Command.clear()],
+            }
         )
-        return {
-            "type": "ir.actions.client",
-            "name": _("Modifier la declaration SCRAP"),
-            "tag": "ar_scrap.cart",
-            "context": {
-                "restore_scrap_order_id": self.id,
-            },
-        }
+        self.sudo().line_ids.write({"is_confirmed": False})
+        self.sudo().message_post(
+            body=_(
+                "Modification demandée par %(requester)s. La déclaration a été "
+                "renvoyée en brouillon à %(declarant)s.",
+                requester=requester.name,
+                declarant=original_declarant.name,
+            ),
+            author_id=requester.partner_id.id,
+        )
+        return self.env["ir.actions.actions"]._for_xml_id("ar_scrap.action_ar_scrap_order_draft")
 
     def _open_decision_wizard(self, decision):
         self.ensure_one()
@@ -378,24 +500,30 @@ class ArScrapOrder(models.Model):
             current_state, current_state
         )
         self.sudo().message_post(
-            body=_(
-                "Opération refusée au niveau %(level)s par %(user)s.<br/>Motif : %(reason)s",
-                level=level_label,
-                user=self.env.user.name,
-                reason=reason,
-            ),
+            body=Markup(
+                _("Opération refusée au niveau %(level)s par %(user)s.<br/>Motif : %(reason)s")
+            )
+            % {
+                "level": level_label,
+                "user": self.env.user.name,
+                "reason": reason,
+            },
             author_id=self.env.user.partner_id.id,
         )
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def get_cart_restore_payload(self):
         self.ensure_one()
+        if self.state == "draft" and self.user_id != self.env.user:
+            raise AccessError(_("Vous ne pouvez consulter que vos propres brouillons."))
         localized_scrap_date = ""
         if self.scrap_date:
             localized_scrap_date = fields.Datetime.context_timestamp(self, self.scrap_date).strftime("%Y-%m-%dT%H:%M")
         lines = []
         for line in self.line_ids:
-            defect_type_id = line.defect_type_id.id if line.defect_type_id else "other"
+            defect_type_id = line.defect_type_id.id if line.defect_type_id else (
+                "other" if (line.defect_type_name or "").strip().casefold() == "autre" else ""
+            )
             lines.append(
                 {
                     "product_id": line.product_id.id,
@@ -412,9 +540,22 @@ class ArScrapOrder(models.Model):
                     "defect_type_id": defect_type_id,
                     "defect_type_name": line.defect_type_name,
                     "defect_comment": line.defect_comment or "",
+                    "lot": line.lot or "",
                     "quantity": line.quantity,
+                    # A resumed draft must remain fully editable, including lines
+                    # that had already been confirmed before it was saved.
+                    "confirmed": False if self.state == "draft" else True,
                 }
             )
+        attachments = [
+            {
+                "id": attachment.id,
+                "name": attachment.name,
+                "mimetype": attachment.mimetype or "application/octet-stream",
+                "data": attachment.datas.decode("ascii") if isinstance(attachment.datas, bytes) else (attachment.datas or ""),
+            }
+            for attachment in self.attachment_ids
+        ]
         return {
             "order_id": self.id,
             "name": self.name,
@@ -422,6 +563,8 @@ class ArScrapOrder(models.Model):
             "production_order_id": self.production_order_id.id or False,
             "scrap_datetime": localized_scrap_date,
             "notes": self.notes or "",
+            "state": self.state,
+            "attachments": attachments,
             "lines": lines,
         }
 
@@ -430,10 +573,195 @@ class ArScrapOrder(models.Model):
         sequence = self.env["ir.sequence"]
         for vals in vals_list:
             vals["user_id"] = self.env.user.id
-            vals["validated_at"] = fields.Datetime.now()
             if vals.get("name", _("Nouveau")) == _("Nouveau"):
                 vals["name"] = sequence.next_by_code("ar.scrap.order") or _("Nouveau")
         return super().create(vals_list)
+
+    @api.model
+    def _validate_cart_attachments(self, attachments):
+        attachments = attachments or []
+        if not isinstance(attachments, list):
+            raise ValidationError(_("Le format des pièces jointes est invalide."))
+        if len(attachments) > 10:
+            raise ValidationError(_("Vous ne pouvez pas joindre plus de 10 fichiers."))
+        validated_attachments = []
+        for attachment in attachments:
+            if not isinstance(attachment, dict):
+                raise ValidationError(_("Une pièce jointe est invalide."))
+            name = attachment.get("name")
+            data = attachment.get("data")
+            mimetype = attachment.get("mimetype") or "application/octet-stream"
+            if not isinstance(name, str) or not name.strip() or not isinstance(data, str):
+                raise ValidationError(_("Le nom ou le contenu d'une pièce jointe est invalide."))
+            name = name.strip()[:255]
+            mimetype = mimetype[:255] if isinstance(mimetype, str) else "application/octet-stream"
+            try:
+                decoded_data = base64.b64decode(data, validate=True)
+            except (binascii.Error, ValueError):
+                raise ValidationError(_("Le contenu de la pièce jointe %(name)s est invalide.", name=name))
+            if len(decoded_data) > 10 * 1024 * 1024:
+                raise ValidationError(_("La pièce jointe %(name)s dépasse la taille maximale de 10 Mo.", name=name))
+            validated_attachments.append({"name": name, "datas": data, "mimetype": mimetype})
+        return validated_attachments
+
+    @api.model
+    def _prepare_draft_line_commands(self, cart_lines, company_currency):
+        if not isinstance(cart_lines, list) or not cart_lines:
+            raise ValidationError(_("Ajoutez au moins une référence avant d'enregistrer le brouillon."))
+        parsed_lines = []
+        product_ids = set()
+        defect_ids = set()
+        for item in cart_lines:
+            if not isinstance(item, dict):
+                raise ValidationError(_("Une ligne de la liste est invalide."))
+            try:
+                product_id = int(item.get("product_id"))
+                quantity = float(item.get("quantity"))
+            except (TypeError, ValueError):
+                raise ValidationError(_("La référence ou la quantité est invalide."))
+            if product_id <= 0 or quantity <= 0:
+                raise ValidationError(_("Les quantités scrapées doivent être supérieures à zéro."))
+            raw_defect_type = item.get("defect_type_id")
+            defect_type_id = False
+            defect_type_name = False
+            if raw_defect_type == "other":
+                defect_type_name = _("Autre")
+            elif raw_defect_type not in (False, None, ""):
+                try:
+                    defect_type_id = int(raw_defect_type)
+                except (TypeError, ValueError):
+                    raise ValidationError(_("Le type de défaut sélectionné est invalide."))
+                if defect_type_id <= 0:
+                    raise ValidationError(_("Le type de défaut sélectionné est invalide."))
+                defect_ids.add(defect_type_id)
+            comment = item.get("defect_comment") or ""
+            if not isinstance(comment, str) or len(comment) > 1000:
+                raise ValidationError(_("Le commentaire de défaut est invalide."))
+            lot = item.get("lot") or ""
+            if not isinstance(lot, str):
+                raise ValidationError(_("Le format du LOT est invalide."))
+            lot = lot.strip()
+            if len(lot) > 100:
+                raise ValidationError(_("Le LOT ne peut pas dépasser 100 caractères."))
+            parsed_lines.append({
+                "product_id": product_id,
+                "quantity": quantity,
+                "defect_type_id": defect_type_id,
+                "defect_type_name": defect_type_name,
+                "defect_comment": comment.strip(),
+                "lot": lot,
+                "is_confirmed": bool(item.get("confirmed")),
+            })
+            product_ids.add(product_id)
+
+        products = self.env["ar.scrap.product"].browse(list(product_ids)).exists()
+        if len(products) != len(product_ids) or any(not product.active for product in products):
+            raise ValidationError(_("Une référence de la liste de SCRAP n'existe plus ou a été archivée."))
+        defect_types = self.env["ar.scrap.defect.type"].browse(list(defect_ids)).exists()
+        if len(defect_types) != len(defect_ids) or any(not defect.active for defect in defect_types):
+            raise ValidationError(_("Un type de défaut sélectionné n'existe plus ou a été archivé."))
+        products_by_id = {product.id: product for product in products}
+        defects_by_id = {defect.id: defect for defect in defect_types}
+        company = self.env.company
+        conversion_date = fields.Date.context_today(self)
+        commands = []
+        for line in parsed_lines:
+            product = products_by_id[line["product_id"]]
+            defect = defects_by_id.get(line["defect_type_id"])
+            unit_price = product.currency_id._convert(
+                product.unit_price, company_currency, company, conversion_date
+            )
+            commands.append(fields.Command.create({
+                "product_id": product.id,
+                "product_name": product.name,
+                "product_description": product.description,
+                "unit_price": unit_price,
+                "quantity": line["quantity"],
+                "defect_type_id": defect.id if defect else False,
+                "defect_type_name": line["defect_type_name"] or (defect.name if defect else False),
+                "defect_type_image_snapshot": defect.image_128 if defect else False,
+                "defect_comment": line["defect_comment"],
+                "lot": line["lot"],
+                "is_confirmed": line["is_confirmed"],
+            }))
+        return commands
+
+    @api.model
+    def save_draft_from_cart(
+        self, cart_lines, shift=None, scrap_datetime=None, notes=None,
+        attachments=None, production_order_id=None, draft_order_id=None,
+    ):
+        valid_shifts = dict(self._fields["shift"].selection)
+        if shift and shift not in valid_shifts:
+            raise ValidationError(_("Sélectionnez un shift valide."))
+        parsed_datetime = False
+        if scrap_datetime:
+            try:
+                parsed_datetime = fields.Datetime.to_datetime(scrap_datetime)
+            except (TypeError, ValueError):
+                raise ValidationError(_("Sélectionnez une date et une heure valides."))
+        production_order = self.env["ar.scrap.production.order"]
+        if production_order_id:
+            try:
+                production_order = production_order.browse(int(production_order_id)).exists()
+            except (TypeError, ValueError):
+                production_order = self.env["ar.scrap.production.order"]
+            if not production_order:
+                raise ValidationError(_("L'OF sélectionné n'existe plus."))
+        if notes is not None and not isinstance(notes, str):
+            raise ValidationError(_("Le format du commentaire général est invalide."))
+        notes = (notes or "").strip()
+        if len(notes) > 1000:
+            raise ValidationError(_("Le commentaire général ne peut pas dépasser 1000 caractères."))
+
+        company_currency = self.env.company.currency_id
+        commands = self._prepare_draft_line_commands(cart_lines, company_currency)
+        attachment_values = self._validate_cart_attachments(attachments)
+        values = {
+            "shift": shift or False,
+            "scrap_date": parsed_datetime,
+            "production_order_id": production_order.id or False,
+            "production_order_number": production_order.name if production_order else False,
+            "production_order_quantity": production_order.quantity if production_order else 0.0,
+            "notes": notes,
+            "currency_id": company_currency.id,
+            "state": "draft",
+            "validated_at": False,
+        }
+        draft = self.env["ar.scrap.order"]
+        if draft_order_id:
+            try:
+                draft = self.browse(int(draft_order_id)).exists()
+            except (TypeError, ValueError):
+                draft = self.env["ar.scrap.order"]
+            if not draft or draft.state != "draft":
+                raise ValidationError(_("Le brouillon à mettre à jour est introuvable."))
+            if draft.user_id != self.env.user:
+                raise AccessError(_("Vous ne pouvez modifier que vos propres brouillons."))
+            draft.sudo().write({
+                **values,
+                "validation_rule_id": False,
+                "supervisor_validator_ids": [fields.Command.clear()],
+                "manager_validator_ids": [fields.Command.clear()],
+                "md_validator_ids": [fields.Command.clear()],
+                "line_ids": [fields.Command.clear()] + commands,
+            })
+        else:
+            draft = self.create({**values, "line_ids": commands})
+
+        old_attachments = draft.attachment_ids
+        created_attachments = self.env["ir.attachment"].sudo().create([
+            {**attachment, "res_model": self._name, "res_id": draft.id}
+            for attachment in attachment_values
+        ]) if attachment_values else self.env["ir.attachment"]
+        draft.sudo().write({"attachment_ids": [fields.Command.set(created_attachments.ids)]})
+        if old_attachments:
+            old_attachments.sudo().unlink()
+        draft.sudo().message_post(
+            body=_("Brouillon enregistré par %(user)s.", user=self.env.user.name),
+            author_id=self.env.user.partner_id.id,
+        )
+        return {"id": draft.id, "name": draft.name, "state": draft.state}
 
     @api.model
     def create_from_cart(
@@ -475,31 +803,7 @@ class ArScrapOrder(models.Model):
         notes = (notes or "").strip()
         if len(notes) > 1000:
             raise ValidationError(_("Le commentaire général ne peut pas dépasser 1000 caractères."))
-        attachments = attachments or []
-        if not isinstance(attachments, list):
-            raise ValidationError(_("Le format des pièces jointes est invalide."))
-        if len(attachments) > 10:
-            raise ValidationError(_("Vous ne pouvez pas joindre plus de 10 fichiers."))
-        validated_attachments = []
-        for attachment in attachments:
-            if not isinstance(attachment, dict):
-                raise ValidationError(_("Une pièce jointe est invalide."))
-            name = attachment.get("name")
-            data = attachment.get("data")
-            mimetype = attachment.get("mimetype") or "application/octet-stream"
-            if not isinstance(name, str) or not name.strip() or not isinstance(data, str):
-                raise ValidationError(_("Le nom ou le contenu d'une pièce jointe est invalide."))
-            name = name.strip()[:255]
-            if not isinstance(mimetype, str):
-                mimetype = "application/octet-stream"
-            mimetype = mimetype[:255]
-            try:
-                decoded_data = base64.b64decode(data, validate=True)
-            except (binascii.Error, ValueError):
-                raise ValidationError(_("Le contenu de la pièce jointe %(name)s est invalide.", name=name))
-            if len(decoded_data) > 10 * 1024 * 1024:
-                raise ValidationError(_("La pièce jointe %(name)s dépasse la taille maximale de 10 Mo.", name=name))
-            validated_attachments.append({"name": name, "datas": data, "mimetype": mimetype})
+        validated_attachments = self._validate_cart_attachments(attachments)
 
         parsed_lines = []
         product_ids = set()
@@ -520,6 +824,12 @@ class ArScrapOrder(models.Model):
             defect_comment = defect_comment.strip()
             if len(defect_comment) > 1000:
                 raise ValidationError(_("Le commentaire de défaut ne peut pas dépasser 1000 caractères."))
+            lot = item.get("lot") or ""
+            if not isinstance(lot, str):
+                raise ValidationError(_("Le format du LOT est invalide."))
+            lot = lot.strip()
+            if len(lot) > 100:
+                raise ValidationError(_("Le LOT ne peut pas dépasser 100 caractères."))
             if raw_defect_type == "other":
                 defect_type_id = False
                 defect_type_name = _("Autre")
@@ -541,6 +851,7 @@ class ArScrapOrder(models.Model):
                     "defect_type_id": defect_type_id,
                     "defect_type_name": defect_type_name,
                     "defect_comment": defect_comment,
+                    "lot": lot,
                 }
             )
             product_ids.add(product_id)
@@ -556,6 +867,7 @@ class ArScrapOrder(models.Model):
         if len(defect_types) != len(configured_defect_ids) or any(not defect.active for defect in defect_types):
             raise ValidationError(_("Un type de défaut sélectionné n'existe plus ou a été archivé."))
         defect_names = {defect.id: defect.name for defect in defect_types}
+        defect_images = {defect.id: defect.image_128 for defect in defect_types}
         for line in parsed_lines:
             defect_type_id = line["defect_type_id"]
             if (
@@ -576,6 +888,7 @@ class ArScrapOrder(models.Model):
             defect_type_id = parsed_line["defect_type_id"]
             defect_type_name = parsed_line["defect_type_name"]
             defect_comment = parsed_line["defect_comment"]
+            lot = parsed_line["lot"]
             quantity = parsed_line["quantity"]
             unit_price = product.currency_id._convert(
                 product.unit_price,
@@ -595,7 +908,10 @@ class ArScrapOrder(models.Model):
                         "quantity": quantity,
                         "defect_type_id": defect_type_id,
                         "defect_type_name": defect_type_name or defect_names[defect_type_id],
+                        "defect_type_image_snapshot": defect_images.get(defect_type_id),
                         "defect_comment": defect_comment,
+                        "lot": lot,
+                        "is_confirmed": True,
                     }
                 )
             )
@@ -620,6 +936,7 @@ class ArScrapOrder(models.Model):
             "currency_id": company_currency.id,
             "line_ids": commands,
             "state": "validated",
+            "validated_at": fields.Datetime.now(),
         }
         if rule:
             values.update(
@@ -636,12 +953,15 @@ class ArScrapOrder(models.Model):
             source_order = self.browse(int(source_order_id)).exists()
             if not source_order:
                 raise ValidationError(_("La declaration a modifier est introuvable."))
+            if source_order.state == "draft" and source_order.user_id != self.env.user:
+                raise AccessError(_("Vous ne pouvez soumettre que vos propres brouillons."))
 
         if source_order:
-            source_order.sudo().approval_history_ids.unlink()
+            original_declarant = source_order.user_id
             source_order.sudo().write(
                 {
                     **values,
+                    "user_id": original_declarant.id,
                     "line_ids": [fields.Command.clear()] + commands,
                     "refusal_reason": False,
                 }
@@ -649,6 +969,7 @@ class ArScrapOrder(models.Model):
             order = source_order
         else:
             order = self.create(values)
+        old_attachments = source_order.attachment_ids if source_order else self.env["ir.attachment"]
         if validated_attachments:
             created_attachments = self.env["ir.attachment"].sudo().create(
                 [
@@ -661,9 +982,18 @@ class ArScrapOrder(models.Model):
                 ]
             )
             order.sudo().write({"attachment_ids": [fields.Command.set(created_attachments.ids)]})
+        elif source_order:
+            order.sudo().write({"attachment_ids": [fields.Command.clear()]})
+        if old_attachments:
+            old_attachments.sudo().unlink()
         if source_order:
             order.sudo().message_post(
-                body=_("Demande modifiee et resoumise par %(user)s.", user=self.env.user.name),
+                body=_(
+                    "Déclaration modifiée et resoumise par %(user)s. "
+                    "Le déclarant initial reste %(declarant)s.",
+                    user=self.env.user.name,
+                    declarant=original_declarant.name,
+                ),
                 author_id=self.env.user.partner_id.id,
             )
         order._notify_current_validators()
@@ -707,8 +1037,15 @@ class ArScrapOrderLine(models.Model):
         related="defect_type_id.image_128",
         readonly=True,
     )
+    defect_type_image_snapshot = fields.Binary(
+        string="Image du défaut enregistrée",
+        readonly=True,
+        attachment=True,
+    )
     defect_type_name = fields.Char(string="Type de défaut", readonly=True)
     defect_comment = fields.Text(string="Commentaire", readonly=True)
+    lot = fields.Char(string="LOT", readonly=True)
+    is_confirmed = fields.Boolean(string="Ligne confirmée", default=True, readonly=True)
     currency_id = fields.Many2one(
         "res.currency",
         string="Devise",

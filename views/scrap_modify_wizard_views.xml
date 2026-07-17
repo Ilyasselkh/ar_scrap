@@ -9,16 +9,17 @@
                 <div class="ar_scrap_confirmation ar_scrap_confirmation_modify">
                     <i class="fa fa-pencil-square-o"/>
                     <div>
-                        <h3>Remettre la demande dans la liste</h3>
+                        <h3>Renvoyer la déclaration au déclarant initial</h3>
                         <p>
-                            Cette action va ouvrir la liste avec les lignes de la demande
+                            Cette action va replacer la déclaration
                             <strong><field name="order_id" nolabel="1"/></strong>.
-                            Vous pourrez modifier les quantites, les defauts et les informations generales avant de resoumettre la demande.
+                            dans Mes déclarations SCRAP. Seul son déclarant initial pourra
+                            continuer la saisie, effectuer les corrections puis la resoumettre.
                         </p>
                     </div>
                 </div>
                 <footer>
-                    <button name="action_confirm" type="object" string="Modifier"
+                    <button name="action_confirm" type="object" string="Renvoyer au déclarant"
                             class="btn-primary"/>
                     <button string="Annuler" special="cancel" class="btn-secondary"/>
                 </footer>

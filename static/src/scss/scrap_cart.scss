@@ -73,15 +73,18 @@
 .ar_scrap_sap_badge.is-sap { color: #117442 !important; background: #ddf5e7; }
 .ar_scrap_sap_badge.is-non-sap { color: #8a5a16 !important; background: #fff0d5; }
 .ar_scrap_line_confirmed_badge { display: inline-flex !important; align-items: center; gap: 4px; width: fit-content; margin-top: 7px !important; padding: 3px 7px; border-radius: 10px; color: #117442 !important; background: #ddf5e7; font-size: 10px !important; font-weight: 800; }
-.ar_scrap_line_defect_fields { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(145px, 1.2fr); gap: 8px; }
+.ar_scrap_line_defect_fields { display: grid; grid-template-columns: minmax(115px, .8fr) minmax(135px, 1.2fr) minmax(95px, .7fr); gap: 8px; }
 .ar_scrap_line_defect_fields label { min-width: 0; margin: 0; }
 .ar_scrap_line_defect_fields label > span { display: block; margin: 0 0 5px 2px; color: #667183; font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .ar_scrap_line_defect_fields label > span b { color: #d63b4b; }
 .ar_scrap_line_defect_fields select,
+.ar_scrap_line_defect_fields input,
 .ar_scrap_line_defect_fields textarea { display: block; width: 100%; border: 1px solid #cbd3dd; border-radius: 7px; outline: 0; color: var(--ar-ink); background: #fff; font-size: 12px; }
 .ar_scrap_line_defect_fields select { height: 34px; padding: 0 8px; }
 .ar_scrap_line_defect_fields textarea { height: 58px; padding: 7px 8px; resize: vertical; }
+.ar_scrap_line_defect_fields input { height: 58px; padding: 7px 8px; }
 .ar_scrap_line_defect_fields select:focus,
+.ar_scrap_line_defect_fields input:focus,
 .ar_scrap_line_defect_fields textarea:focus { border-color: var(--ar-teal); box-shadow: 0 0 0 3px rgba(0, 160, 157, .1); }
 .ar_scrap_defect_selector { display: grid; grid-template-columns: 38px minmax(0, 1fr) 20px; align-items: center; gap: 8px; width: 100%; height: 58px; padding: 5px 8px; border: 1px solid #cbd3dd; border-radius: 7px; color: #334054; background: #fff; text-align: left; }
 .ar_scrap_defect_selector:hover { border-color: var(--ar-teal); background: #f7fdfd; }
@@ -100,6 +103,7 @@
 .ar_scrap_qty_row button:disabled,
 .ar_scrap_qty_row input:disabled,
 .ar_scrap_line_defect_fields select:disabled,
+.ar_scrap_line_defect_fields input:disabled,
 .ar_scrap_line_defect_fields textarea:disabled { opacity: .62; cursor: not-allowed; background: #edf1f3; }
 .ar_scrap_qty_row .ar_scrap_confirm_line { width: auto; min-width: 138px; margin-left: auto; padding: 0 13px; border-color: #16834f; color: #fff; background: #16834f; font-size: 12px; font-weight: 800; }
 .ar_scrap_qty_row .ar_scrap_confirm_line:hover { border-color: #106b40; background: #106b40; }
@@ -112,7 +116,11 @@
 .ar_scrap_summary strong { color: var(--ar-ink); }
 .ar_scrap_summary .ar_scrap_summary_amount { margin: 11px -5px -5px; padding: 11px 5px 5px; border-top: 1px solid #d3dae3; color: #087f67; font-size: 14px; font-weight: 800; }
 .ar_scrap_summary .ar_scrap_summary_amount strong { color: #087f67; font-size: 16px; }
-.ar_scrap_validate { width: 100%; min-height: 50px; margin-top: 12px; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(135deg, var(--ar-purple), var(--ar-teal)); font-size: 16px; font-weight: 800; box-shadow: 0 12px 25px rgba(0, 160, 157, .2); }
+.ar_scrap_cart_actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.ar_scrap_save_draft, .ar_scrap_validate { width: 100%; min-height: 50px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 800; }
+.ar_scrap_save_draft { color: var(--ar-purple); background: #f1eaf3; border: 1px solid #d9c9dc; }
+.ar_scrap_validate { color: #fff; background: linear-gradient(135deg, var(--ar-purple), var(--ar-teal)); box-shadow: 0 12px 25px rgba(0, 160, 157, .2); }
+.ar_scrap_save_draft:disabled { opacity: .45; }
 .ar_scrap_validate:disabled { opacity: .45; box-shadow: none; }
 .ar_scrap_catalog { overflow: auto; padding: 27px 30px 40px; }
 .ar_scrap_catalog_filters { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
@@ -259,6 +267,9 @@
     .ar_scrap_search { width: 100%; min-width: 0; }
     .ar_scrap_info_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ar_scrap_general_fields { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .ar_scrap_line_defect_fields { grid-template-columns: 1fr; }
 }
 @media (max-width: 430px) {
     .ar_scrap_operation_fields { grid-template-columns: 1fr; }

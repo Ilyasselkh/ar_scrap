@@ -27,6 +27,7 @@ export class ArScrapCart extends Component {
         this.onAttachmentsChange = this.onAttachmentsChange.bind(this);
         this.removeAttachment = this.removeAttachment.bind(this);
         this.onDefectCommentChange = this.onDefectCommentChange.bind(this);
+        this.onLotChange = this.onLotChange.bind(this);
         this.openDefectPicker = this.openDefectPicker.bind(this);
         this.closeDefectPicker = this.closeDefectPicker.bind(this);
         this.selectDefectType = this.selectDefectType.bind(this);
@@ -39,6 +40,7 @@ export class ArScrapCart extends Component {
         this.setQuantity = this.setQuantity.bind(this);
         this.removeLine = this.removeLine.bind(this);
         this.clearCart = this.clearCart.bind(this);
+        this.saveDraft = this.saveDraft.bind(this);
         this.validateCart = this.validateCart.bind(this);
         this.restoreOrderToCart = this.restoreOrderToCart.bind(this);
         this.showDescription = this.showDescription.bind(this);
@@ -67,9 +69,11 @@ export class ArScrapCart extends Component {
             attachments: [],
             modifyingOrderId: false,
             modifyingOrderName: "",
+            modifyingOrderState: "",
             descriptionProduct: false,
             loading: true,
             validating: false,
+            savingDraft: false,
         });
         onWillStart(() => this.loadProducts());
     }
@@ -148,12 +152,19 @@ export class ArScrapCart extends Component {
         this.clearCart();
         this.state.modifyingOrderId = payload.order_id;
         this.state.modifyingOrderName = payload.name || "";
+        this.state.modifyingOrderState = payload.state || "";
         this.state.shift = payload.shift || "";
         this.state.productionOrderId = payload.production_order_id ? String(payload.production_order_id) : "";
         this.state.scrapDateTime = payload.scrap_datetime || nowAsLocalDateTime();
         this.state.notes = payload.notes || "";
-        this.state.attachments = [];
         this.nextAttachmentId = 0;
+        this.state.attachments = (payload.attachments || []).map((attachment) => ({
+            clientId: `attachment_${++this.nextAttachmentId}`,
+            serverId: attachment.id,
+            name: attachment.name,
+            mimetype: attachment.mimetype || "application/octet-stream",
+            data: attachment.data || "",
+        }));
 
         for (const restoredLine of payload.lines || []) {
             const product = this.state.products.find((item) => item.id === restoredLine.product_id);
@@ -178,13 +189,14 @@ export class ArScrapCart extends Component {
                 defectTypeImage: defectType ? this.getDefectImage(defectType) : false,
                 defectTypeEmoji: restoredLine.defect_type_id === "other" ? "?" : "",
                 defectComment: restoredLine.defect_comment || "",
+                lot: restoredLine.lot || "",
                 quantity: Number(restoredLine.quantity || 1),
-                confirmed: false,
+                confirmed: Boolean(restoredLine.confirmed),
             };
         }
         this.notification.add(
-            `${_t("Demande chargee dans la liste")} : ${this.state.modifyingOrderName}`,
-            { type: "info", title: _t("Modification en cours") }
+            `${payload.state === "draft" ? _t("Brouillon chargé") : _t("Demande chargée dans la liste")} : ${this.state.modifyingOrderName}`,
+            { type: "info", title: payload.state === "draft" ? _t("Reprise du brouillon") : _t("Modification en cours") }
         );
     }
 
@@ -497,6 +509,13 @@ export class ArScrapCart extends Component {
         }
     }
 
+    onLotChange(lineId, event) {
+        const line = this.state.cart[lineId];
+        if (line && !line.confirmed) {
+            line.lot = event.target.value;
+        }
+    }
+
     addProduct(product) {
         if (this.activeDraftLine) {
             return;
@@ -520,6 +539,7 @@ export class ArScrapCart extends Component {
             defectTypeImage: false,
             defectTypeEmoji: "",
             defectComment: "",
+            lot: "",
             quantity: 1,
             confirmed: false,
         };
@@ -596,6 +616,68 @@ export class ArScrapCart extends Component {
         this.nextCartLineId = 0;
     }
 
+    get cartPayload() {
+        return this.cartLines.map((line) => ({
+            product_id: line.productId,
+            quantity: line.quantity,
+            defect_type_id: line.defectTypeId,
+            defect_comment: line.defectComment,
+            lot: line.lot,
+            confirmed: line.confirmed,
+        }));
+    }
+
+    get attachmentPayload() {
+        return this.state.attachments.map(({ name, mimetype, data }) => ({ name, mimetype, data }));
+    }
+
+    toServerDateTime(value) {
+        if (!value) {
+            return false;
+        }
+        return new Date(value).toISOString().slice(0, 19).replace("T", " ");
+    }
+
+    get canSaveDraft() {
+        return Boolean(
+            this.cartLines.length &&
+            !this.state.savingDraft &&
+            !this.state.validating &&
+            (!this.state.modifyingOrderId || this.state.modifyingOrderState === "draft")
+        );
+    }
+
+    async saveDraft() {
+        if (!this.canSaveDraft) {
+            return;
+        }
+        this.state.savingDraft = true;
+        try {
+            const result = await this.orm.call(
+                "ar.scrap.order",
+                "save_draft_from_cart",
+                [
+                    this.cartPayload,
+                    this.state.shift || false,
+                    this.toServerDateTime(this.state.scrapDateTime),
+                    this.state.notes,
+                    this.attachmentPayload,
+                    this.state.productionOrderId || false,
+                    this.state.modifyingOrderId || false,
+                ]
+            );
+            this.state.modifyingOrderId = result.id;
+            this.state.modifyingOrderName = result.name;
+            this.state.modifyingOrderState = "draft";
+            this.notification.add(
+                `${_t("Brouillon enregistré")} : ${result.name}`,
+                { type: "success", title: _t("Saisie conservée") }
+            );
+        } finally {
+            this.state.savingDraft = false;
+        }
+    }
+
     async validateCart() {
         if (!this.cartLines.length || this.state.validating) {
             return;
@@ -634,16 +716,8 @@ export class ArScrapCart extends Component {
         }
         this.state.validating = true;
         try {
-            const payload = this.cartLines.map((line) => ({
-                product_id: line.productId,
-                quantity: line.quantity,
-                defect_type_id: line.defectTypeId,
-                defect_comment: line.defectComment,
-            }));
-            const scrapDateTimeUtc = new Date(this.state.scrapDateTime)
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ");
+            const payload = this.cartPayload;
+            const scrapDateTimeUtc = this.toServerDateTime(this.state.scrapDateTime);
             const result = await this.orm.call(
                 "ar.scrap.order",
                 "create_from_cart",
@@ -652,7 +726,7 @@ export class ArScrapCart extends Component {
                     this.state.shift,
                     scrapDateTimeUtc,
                     this.state.notes,
-                    this.state.attachments.map(({ name, mimetype, data }) => ({ name, mimetype, data })),
+                    this.attachmentPayload,
                     this.state.productionOrderId,
                     this.state.modifyingOrderId || false,
                 ]
@@ -665,6 +739,7 @@ export class ArScrapCart extends Component {
             this.state.attachments = [];
             this.state.modifyingOrderId = false;
             this.state.modifyingOrderName = "";
+            this.state.modifyingOrderState = "";
             this.nextAttachmentId = 0;
             const isDirectlyValidated = result.state === "validated";
             const message = isDirectlyValidated

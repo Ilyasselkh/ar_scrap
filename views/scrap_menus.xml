@@ -7,6 +7,7 @@
 
     <menuitem id="menu_ar_scrap_root" name="AR Scrap" sequence="20" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_cart" name="Déclaration SCRAP" parent="menu_ar_scrap_root" action="action_ar_scrap_cart" sequence="10" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_drafts" name="Mes déclarations SCRAP" parent="menu_ar_scrap_root" action="action_ar_scrap_order_draft" sequence="11" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_production_order" name="Intégration OF" parent="menu_ar_scrap_root" action="action_ar_scrap_production_order" sequence="12" groups="group_ar_scrap_production_order"/>
     <menuitem id="menu_ar_scrap_validations" name="Validations" parent="menu_ar_scrap_root" action="action_ar_scrap_order_validation" sequence="15" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_archive" name="Archive" parent="menu_ar_scrap_root" sequence="20" groups="base.group_user"/>

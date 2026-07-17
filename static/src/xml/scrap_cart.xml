@@ -98,6 +98,13 @@
                                               t-on-input="(ev) => onDefectCommentChange(line.lineId, ev)"
                                               t-att-required="line.defectTypeId === 'other'"/>
                                 </label>
+                                <label class="ar_scrap_lot_field">
+                                    <span>LOT</span>
+                                    <input type="text" maxlength="100" placeholder="Renseigner le LOT..."
+                                           t-att-value="line.lot"
+                                           t-att-disabled="line.confirmed"
+                                           t-on-input="(ev) => onLotChange(line.lineId, ev)"/>
+                                </label>
                             </div>
                             <button type="button" class="ar_scrap_remove" t-att-disabled="line.confirmed" t-on-click="() => removeLine(line.lineId)" title="Retirer"><i class="fa fa-times"/></button>
                         </div>
@@ -121,10 +128,17 @@
                     <div><span>Quantité totale</span><strong t-esc="totalQuantity.toFixed(3)"/></div>
                     <div class="ar_scrap_summary_amount"><span>Montant total</span><strong t-esc="formatAmount(totalAmount)"/></div>
                 </div>
-                <button type="button" class="ar_scrap_validate" t-att-disabled="!allLinesConfirmed || state.validating" t-on-click="validateCart">
-                    <i t-att-class="state.validating ? 'fa fa-spinner fa-spin' : 'fa fa-check-circle'"/>
-                    <t t-if="state.validating"> Validation...</t><t t-else=""> Valider la liste de SCRAP</t>
-                </button>
+                <div class="ar_scrap_cart_actions">
+                    <button t-if="!state.modifyingOrderId || state.modifyingOrderState === 'draft'"
+                            type="button" class="ar_scrap_save_draft" t-att-disabled="!canSaveDraft" t-on-click="saveDraft">
+                        <i t-att-class="state.savingDraft ? 'fa fa-spinner fa-spin' : 'fa fa-save'"/>
+                        <t t-if="state.savingDraft"> Enregistrement...</t><t t-else=""> Enregistrer le brouillon</t>
+                    </button>
+                    <button type="button" class="ar_scrap_validate" t-att-disabled="!allLinesConfirmed || state.validating || state.savingDraft" t-on-click="validateCart">
+                        <i t-att-class="state.validating ? 'fa fa-spinner fa-spin' : 'fa fa-check-circle'"/>
+                        <t t-if="state.validating"> Validation...</t><t t-else=""> Valider la liste de SCRAP</t>
+                    </button>
+                </div>
             </aside>
 
             <main class="ar_scrap_catalog">

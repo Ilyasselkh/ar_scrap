@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_ar_scrap_report" model="report.paperformat">
+        <field name="name">ARaymond - Rapport SCRAP</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">42</field>
+        <field name="margin_bottom">24</field>
+        <field name="margin_left">12</field>
+        <field name="margin_right">12</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">8</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <template id="report_araymond_external_layout">
+        <div class="header" style="padding: 0 12mm;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 5mm;">
+                <tr>
+                    <td style="width: 58%; vertical-align: top; text-align: left;">
+                        <img t-att-src="o.get_report_header_logo()"
+                             width="320"
+                             height="62"
+                             style="display: block; width: 320px; height: 62px;"/>
+                    </td>
+                    <td style="width: 42%; vertical-align: top; text-align: right; font-family: Arial, sans-serif;">
+                        <div style="font-size: 15px; font-weight: bold; color: #9a9a9a; margin-top: 4px;">
+                            MORE THAN FASTENING
+                        </div>
+                        <div style="font-size: 8px; color: #222; line-height: 1.35; margin-top: 12px;">
+                            <div>ARAYMOND MAROC SARL AU - Indusparc</div>
+                            <div>Boulevard Ahl Laghlam batiments M12 &amp; M13 - Sidi Moumen -</div>
+                            <div>20400 - Casablanca (MA)</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div style="border-top: 1px solid #d0d0d0; margin-top: 6mm; height: 1px;"/>
+        </div>
+
+        <div class="article"
+             t-att-data-oe-model="o and o._name"
+             t-att-data-oe-id="o and o.id"
+             t-att-data-oe-lang="o and o.env.context.get('lang')"
+             style="background-image: url('/ar_scrap/static/src/img/araymond_report_background.png'); background-size: cover; background-position: center top; background-repeat: no-repeat;">
+            <t t-out="0"/>
+        </div>
+
+        <div class="footer" style="padding: 0 12mm;">
+            <div style="border-top: 2px solid #111; padding-top: 8mm; font-size: 10px; color: #222; text-align: center;">
+                Page : <span class="page"/> / <span class="topage"/>
+            </div>
+        </div>
+    </template>
+</odoo>

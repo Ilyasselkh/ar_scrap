@@ -25,13 +25,16 @@
         <field name="arch" type="xml">
             <form string="Opération de scrap" create="false" edit="false" delete="false" class="ar_scrap_order_form">
                 <header>
+                    <button name="action_continue_draft" type="object" string="Continuer la saisie" icon="fa-pencil-square-o" class="btn-primary" invisible="not can_current_user_edit_draft"/>
                     <button name="action_approve" type="object" string="Valider" icon="fa-check" class="btn-success ar_scrap_approve_btn" invisible="not can_current_user_approve"/>
                     <button name="action_refuse" type="object" string="Refuser" icon="fa-times" class="btn-danger ar_scrap_refuse_btn" invisible="not can_current_user_approve"/>
-                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary"/>
-                    <field name="state" widget="statusbar" statusbar_visible="pending_supervisor,pending_manager,pending_md,validated,refused"/>
+                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary" invisible="state == 'draft'"/>
+                    <button name="action_print_report" type="object" string="Imprimer le rapport" icon="fa-print" class="btn-secondary" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,pending_supervisor,pending_manager,pending_md,validated,refused"/>
                 </header>
                 <sheet class="ar_scrap_order_sheet">
                     <field name="can_current_user_approve" invisible="True"/>
+                    <field name="can_current_user_edit_draft" invisible="True"/>
                     <field name="currency_id" invisible="True"/>
                     <div class="ar_scrap_order_hero">
                         <div>
@@ -106,6 +109,7 @@
                             <field name="defect_type_name"/>
                             <field name="defect_type_image" string="Image du défaut" widget="image" options="{'size': [48, 48]}" class="ar_scrap_defect_thumb"/>
                             <field name="defect_comment" optional="show"/>
+                            <field name="lot" string="LOT" optional="show"/>
                         </list>
                     </field>
 
@@ -156,6 +160,15 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('state', '=', 'validated')]</field>
         <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+    </record>
+
+    <record id="action_ar_scrap_order_draft" model="ir.actions.act_window">
+        <field name="name">Mes déclarations SCRAP</field>
+        <field name="res_model">ar.scrap.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'draft')]</field>
+        <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+        <field name="context">{}</field>
     </record>
 
     <record id="action_ar_scrap_order_refused" model="ir.actions.act_window">
