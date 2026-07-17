@@ -89,6 +89,7 @@ class ArScrapOrder(models.Model):
             ("pending_supervisor", "En attente Superviseur"),
             ("pending_manager", "En attente Manager"),
             ("pending_md", "En attente MD"),
+            ("sap_processing", "Traitement SAP"),
             ("validated", "Validée"),
             ("refused", "Refusée"),
         ],
@@ -197,6 +198,7 @@ class ArScrapOrder(models.Model):
         "supervisor_validator_ids",
         "manager_validator_ids",
         "md_validator_ids",
+        "user_id",
     )
     @api.depends_context("uid")
     def _compute_can_current_user_approve(self):
@@ -214,6 +216,8 @@ class ArScrapOrder(models.Model):
 
     def _get_current_validators(self):
         self.ensure_one()
+        if self.state == "sap_processing":
+            return self.user_id
         field_by_state = {
             "pending_supervisor": "supervisor_validator_ids",
             "pending_manager": "manager_validator_ids",
@@ -317,10 +321,11 @@ class ArScrapOrder(models.Model):
     def _notify_current_validators(self):
         """Queue one validation email for all users assigned to the current step."""
         self.ensure_one()
-        if not self.validation_rule_id or self.state not in {
+        if self.state not in {
             "pending_supervisor",
             "pending_manager",
             "pending_md",
+            "sap_processing",
         }:
             return
 
@@ -352,14 +357,22 @@ class ArScrapOrder(models.Model):
             return "pending_manager"
         if rule.md_ids:
             return "pending_md"
-        return "validated"
+        return "sap_processing"
 
     def _get_next_validation_state(self):
         self.ensure_one()
-        if self.state == "pending_supervisor" and self.manager_validator_ids:
-            return "pending_manager"
-        if self.state in ("pending_supervisor", "pending_manager") and self.md_validator_ids:
-            return "pending_md"
+        if self.state == "pending_supervisor":
+            if self.manager_validator_ids:
+                return "pending_manager"
+            if self.md_validator_ids:
+                return "pending_md"
+            return "sap_processing"
+        if self.state == "pending_manager":
+            return "pending_md" if self.md_validator_ids else "sap_processing"
+        if self.state == "pending_md":
+            return "sap_processing"
+        if self.state == "sap_processing":
+            return "validated"
         return "validated"
 
     def _check_current_validator(self):
@@ -468,7 +481,10 @@ class ArScrapOrder(models.Model):
             }
         )
         next_state = self._get_next_validation_state()
-        self.sudo().write({"state": next_state})
+        state_values = {"state": next_state}
+        if next_state == "validated":
+            state_values["validated_at"] = fields.Datetime.now()
+        self.sudo().write(state_values)
         level_label = dict(self.env["ar.scrap.approval.history"]._fields["level"].selection).get(
             current_state, current_state
         )
@@ -935,8 +951,8 @@ class ArScrapOrder(models.Model):
             "notes": notes,
             "currency_id": company_currency.id,
             "line_ids": commands,
-            "state": "validated",
-            "validated_at": fields.Datetime.now(),
+            "state": "sap_processing",
+            "validated_at": False,
         }
         if rule:
             values.update(
@@ -1096,6 +1112,7 @@ class ArScrapApprovalHistory(models.Model):
             ("pending_supervisor", "Superviseur"),
             ("pending_manager", "Manager"),
             ("pending_md", "MD"),
+            ("sap_processing", "Traitement SAP"),
         ],
         string="Niveau",
         required=True,
