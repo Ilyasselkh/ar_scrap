@@ -103,7 +103,7 @@ export class ArScrapCart extends Component {
             const bomLines = productIds.length ? await this.orm.searchRead(
                 "ar.scrap.bom.line",
                 [["product_id", "in", productIds]],
-                ["product_id", "reference", "quantity", "description", "unit"],
+                ["product_id", "reference", "quantity", "description", "unit", "unit_label"],
                 { order: "product_id, id" }
             ) : [];
             const bomByProduct = new Map(productIds.map((id) => [id, []]));

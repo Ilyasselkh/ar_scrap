@@ -248,7 +248,7 @@
                                             <td t-esc="bomLine.reference"/>
                                             <td t-esc="formatQuantity(bomLine.quantity)"/>
                                             <td t-esc="bomLine.description || '—'"/>
-                                            <td t-esc="bomLine.unit === 'pce' ? 'PCE' : 'mm'"/>
+                                            <td t-esc="bomLine.unit_label || bomLine.unit"/>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -2,6 +2,53 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
 
+BOM_UNIT_SELECTION = [
+    # Comptage et conditionnement
+    ("pce", "PCE"),
+    ("set", "ENS"),
+    ("pair", "PAIRE"),
+    ("dozen", "DOUZAINE"),
+    ("lot", "LOT"),
+    ("box", "BOÎTE"),
+    ("carton", "CARTON"),
+    ("roll", "ROULEAU"),
+    ("bag", "SAC"),
+    ("pallet", "PALETTE"),
+    # Longueur
+    ("um", "µm"),
+    ("mm", "mm"),
+    ("cm", "cm"),
+    ("dm", "dm"),
+    ("m", "m"),
+    ("km", "km"),
+    # Surface
+    ("mm2", "mm²"),
+    ("cm2", "cm²"),
+    ("dm2", "dm²"),
+    ("m2", "m²"),
+    # Volume
+    ("mm3", "mm³"),
+    ("cm3", "cm³"),
+    ("dm3", "dm³"),
+    ("m3", "m³"),
+    # Masse
+    ("mg", "mg"),
+    ("g", "g"),
+    ("kg", "kg"),
+    ("t", "t"),
+    # Capacité
+    ("ml", "mL"),
+    ("cl", "cL"),
+    ("dl", "dL"),
+    ("l", "L"),
+    # Temps et proportion
+    ("s", "s"),
+    ("min", "min"),
+    ("h", "h"),
+    ("percent", "%"),
+]
+
+
 class ArScrapBomLine(models.Model):
     _name = "ar.scrap.bom.line"
     _description = "Ligne BOM d'une référence scrap"
@@ -18,11 +65,18 @@ class ArScrapBomLine(models.Model):
     quantity = fields.Float(string="Quantité", required=True, default=1.0, digits=(16, 3))
     description = fields.Text(string="Description")
     unit = fields.Selection(
-        [("pce", "PCE"), ("mm", "mm")],
+        BOM_UNIT_SELECTION,
         string="Unité",
         required=True,
         default="pce",
     )
+    unit_label = fields.Char(string="Libellé de l'unité", compute="_compute_unit_label")
+
+    @api.depends("unit")
+    def _compute_unit_label(self):
+        labels = dict(BOM_UNIT_SELECTION)
+        for line in self:
+            line.unit_label = labels.get(line.unit, line.unit or "")
 
     @api.constrains("quantity")
     def _check_quantity(self):
