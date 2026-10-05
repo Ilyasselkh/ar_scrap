@@ -4,7 +4,7 @@
         <field name="name">ar.scrap.order.list</field>
         <field name="model">ar.scrap.order</field>
         <field name="arch" type="xml">
-            <list string="Archive des scraps" create="false" edit="false" delete="false">
+            <list string="Archive des scraps" create="false" edit="false">
                 <field name="name"/>
                 <field name="scrap_date"/>
                 <field name="shift"/>
@@ -23,7 +23,7 @@
         <field name="name">ar.scrap.order.form</field>
         <field name="model">ar.scrap.order</field>
         <field name="arch" type="xml">
-            <form string="Opération de scrap" create="false" edit="false" delete="false" class="ar_scrap_order_form">
+            <form string="Opération de scrap" create="false" edit="false" class="ar_scrap_order_form">
                 <header>
                     <button name="action_continue_draft" type="object" string="Continuer la saisie" icon="fa-pencil-square-o" class="btn-primary" invisible="not can_current_user_edit_draft"/>
                     <button name="action_approve" type="object" string="Valider" icon="fa-check" class="btn-success ar_scrap_approve_btn" invisible="not can_current_user_approve"/>

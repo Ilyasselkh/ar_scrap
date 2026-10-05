@@ -2,7 +2,7 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_ar_scrap_product_user,ar.scrap.product user,model_ar_scrap_product,base.group_user,1,0,0,0
 access_ar_scrap_product_settings,ar.scrap.product settings,model_ar_scrap_product,ar_scrap.group_ar_scrap_settings,1,1,1,0
 access_ar_scrap_bom_line_user,ar.scrap.bom.line user,model_ar_scrap_bom_line,base.group_user,1,0,0,0
-access_ar_scrap_bom_line_settings,ar.scrap.bom.line settings,model_ar_scrap_bom_line,ar_scrap.group_ar_scrap_settings,1,1,1,1
+access_ar_scrap_bom_line_settings,ar.scrap.bom.line settings,model_ar_scrap_bom_line,ar_scrap.group_ar_scrap_settings,1,1,1,0
 access_ar_scrap_defect_type_user,ar.scrap.defect.type user,model_ar_scrap_defect_type,base.group_user,1,0,0,0
 access_ar_scrap_defect_type_settings,ar.scrap.defect.type settings,model_ar_scrap_defect_type,ar_scrap.group_ar_scrap_settings,1,1,1,0
 access_ar_scrap_production_order_user,ar.scrap.production.order user,model_ar_scrap_production_order,base.group_user,1,0,0,0
@@ -14,6 +14,18 @@ access_ar_scrap_validation_rule_settings,ar.scrap.validation.rule settings,model
 access_ar_scrap_approval_history_user,ar.scrap.approval.history user,model_ar_scrap_approval_history,base.group_user,1,0,0,0
 access_ar_scrap_order_user,ar.scrap.order user,model_ar_scrap_order,base.group_user,1,0,1,0
 access_ar_scrap_order_line_user,ar.scrap.order.line user,model_ar_scrap_order_line,base.group_user,1,0,1,0
-access_ar_scrap_documentation_user,ar.scrap.documentation user,model_ar_scrap_documentation,base.group_user,1,1,1,1
-access_ar_scrap_approval_wizard_user,ar.scrap.approval.wizard user,model_ar_scrap_approval_wizard,base.group_user,1,1,1,1
-access_ar_scrap_modify_wizard_user,ar.scrap.modify.wizard user,model_ar_scrap_modify_wizard,base.group_user,1,1,1,1
+access_ar_scrap_documentation_user,ar.scrap.documentation user,model_ar_scrap_documentation,base.group_user,1,1,1,0
+access_ar_scrap_approval_wizard_user,ar.scrap.approval.wizard user,model_ar_scrap_approval_wizard,base.group_user,1,1,1,0
+access_ar_scrap_modify_wizard_user,ar.scrap.modify.wizard user,model_ar_scrap_modify_wizard,base.group_user,1,1,1,0
+access_ar_scrap_approval_history_admin_unlink,ar.scrap.approval.history admin unlink,model_ar_scrap_approval_history,base.group_system,0,0,0,1
+access_ar_scrap_approval_wizard_admin_unlink,ar.scrap.approval.wizard admin unlink,model_ar_scrap_approval_wizard,base.group_system,0,0,0,1
+access_ar_scrap_bom_line_admin_unlink,ar.scrap.bom.line admin unlink,model_ar_scrap_bom_line,base.group_system,0,0,0,1
+access_ar_scrap_defect_type_admin_unlink,ar.scrap.defect.type admin unlink,model_ar_scrap_defect_type,base.group_system,0,0,0,1
+access_ar_scrap_documentation_admin_unlink,ar.scrap.documentation admin unlink,model_ar_scrap_documentation,base.group_system,0,0,0,1
+access_ar_scrap_modify_wizard_admin_unlink,ar.scrap.modify.wizard admin unlink,model_ar_scrap_modify_wizard,base.group_system,0,0,0,1
+access_ar_scrap_order_admin_unlink,ar.scrap.order admin unlink,model_ar_scrap_order,base.group_system,0,0,0,1
+access_ar_scrap_order_line_admin_unlink,ar.scrap.order.line admin unlink,model_ar_scrap_order_line,base.group_system,0,0,0,1
+access_ar_scrap_product_admin_unlink,ar.scrap.product admin unlink,model_ar_scrap_product,base.group_system,0,0,0,1
+access_ar_scrap_production_order_admin_unlink,ar.scrap.production.order admin unlink,model_ar_scrap_production_order,base.group_system,0,0,0,1
+access_ar_scrap_validation_rule_admin_unlink,ar.scrap.validation.rule admin unlink,model_ar_scrap_validation_rule,base.group_system,0,0,0,1
+access_ar_scrap_zone_admin_unlink,ar.scrap.zone admin unlink,model_ar_scrap_zone,base.group_system,0,0,0,1
