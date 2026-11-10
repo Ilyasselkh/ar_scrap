@@ -1,5 +1,6 @@
 import base64
 import binascii
+import math
 
 from markupsafe import Markup
 
@@ -92,6 +93,7 @@ class ArScrapOrder(models.Model):
             ("sap_processing", "Traitement SAP"),
             ("validated", "Validée"),
             ("refused", "Refusée"),
+            ("deleted", "Supprimée"),
         ],
         string="Statut",
         required=True,
@@ -100,6 +102,47 @@ class ArScrapOrder(models.Model):
         index=True,
         tracking=True,
     )
+    deleted_by_id = fields.Many2one(
+        "res.users", string="Supprimée par", readonly=True, copy=False,
+    )
+    deleted_at = fields.Datetime(string="Date de suppression", readonly=True, copy=False)
+
+    def unlink(self):
+        """Keep declarations and their audit trail instead of physically deleting them."""
+        if not (self.env.su or self.env.user.has_group("base.group_system")):
+            raise AccessError(_("Seul un administrateur peut supprimer une déclaration."))
+        self.check_access("unlink")
+        orders = self.filtered(lambda order: order.state != "deleted")
+        if not orders:
+            return True
+        actor = self.env.user
+        deleted_at = fields.Datetime.now()
+        # Bypass our write guard only here, after checking the caller's unlink rights.
+        super(ArScrapOrder, orders.sudo()).write({
+            "state": "deleted",
+            "deleted_by_id": actor.id,
+            "deleted_at": deleted_at,
+        })
+        for order in orders:
+            order.sudo().message_post(
+                body=_("Déclaration supprimée par %(user)s. Elle est conservée dans Archive → Supprimées.",
+                       user=actor.name),
+                author_id=actor.partner_id.id,
+                subtype_xmlid="mail.mt_note",
+            )
+        return True
+
+    def write(self, vals):
+        if {"deleted_by_id", "deleted_at"}.intersection(vals) or vals.get("state") == "deleted":
+            raise AccessError(_("Utilisez l'action Supprimer pour enregistrer une suppression."))
+        if "state" in vals and any(order.state == "deleted" for order in self):
+            raise ValidationError(_("Une déclaration supprimée ne peut pas être remise dans le circuit de validation."))
+        return super().write(vals)
+
+    def _check_not_deleted(self):
+        if any(order.state == "deleted" for order in self):
+            raise ValidationError(_("Cette déclaration a été supprimée et ne peut plus être modifiée."))
+
     validation_rule_id = fields.Many2one(
         "ar.scrap.validation.rule",
         string="Règle appliquée",
@@ -138,6 +181,10 @@ class ArScrapOrder(models.Model):
         readonly=True,
     )
     can_current_user_approve = fields.Boolean(compute="_compute_can_current_user_approve")
+    is_current_user_sap_validator = fields.Boolean(
+        compute="_compute_is_current_user_sap_validator",
+        search="_search_is_current_user_sap_validator",
+    )
     can_current_user_edit_draft = fields.Boolean(compute="_compute_can_current_user_edit_draft")
     line_ids = fields.One2many(
         "ar.scrap.order.line",
@@ -151,6 +198,111 @@ class ArScrapOrder(models.Model):
         store=True,
         digits=(16, 3),
     )
+    bom_detail_html = fields.Html(string="Détail des calculs BOM", compute="_compute_bom_tables")
+    bom_totals_html = fields.Html(string="Totaux par composant", compute="_compute_bom_tables")
+    sap_tube_quantity = fields.Float(
+        string="Total de Tube à scraper sur SAP (Par pièce)",
+        compute="_compute_bom_tables",
+        digits=(16, 3),
+    )
+
+    def action_export_xlsx(self):
+        self.ensure_one()
+        self.check_access("read")
+        return {"type": "ir.actions.act_url", "url": f"/ar_scrap/orders/{self.id}/xlsx", "target": "download"}
+
+    def _bom_breakdown(self):
+        self.ensure_one()
+        groups = {}
+        totals = {}
+        for line in self.line_ids:
+            components = groups.setdefault(line.product_name, [])
+            for bom in line.product_id.bom_line_ids:
+                description = (bom.description or "").strip()
+                code = bom.reference or ""
+                quantity = bom.quantity * line.quantity
+                components.append((code, description, bom.quantity, line.quantity, quantity))
+                total = totals.setdefault(description, {"codes": {}, "quantity": 0.0})
+                total["codes"][code] = None
+                total["quantity"] += quantity
+        return groups, totals
+
+    @api.depends(
+        "line_ids.product_name", "line_ids.quantity", "line_ids.product_id",
+        "line_ids.product_id.bom_line_ids.description", "line_ids.product_id.bom_line_ids.reference",
+        "line_ids.product_id.bom_line_ids.quantity",
+    )
+    @api.depends_context("lang")
+    def _compute_bom_tables(self):
+        def table(headers, rows, merge_names=False):
+            name_spans = {}
+            if merge_names:
+                grouped_rows = {}
+                for row in rows:
+                    grouped_rows.setdefault(row[0][0], []).append(row)
+                rows = []
+                for group in grouped_rows.values():
+                    name_spans[len(rows)] = len(group)
+                    rows.extend(group)
+
+            def render_row(index, row):
+                cells = []
+                for column, (value, numeric) in enumerate(row):
+                    if merge_names and column == 0:
+                        if index in name_spans:
+                            cells.append(Markup(
+                                '<td rowspan="%s" class="%s" style="vertical-align: middle; white-space: pre-wrap">%s</td>'
+                            ) % (name_spans[index], "text-end" if numeric else "", value))
+                    else:
+                        cells.append(Markup(
+                            '<td class="text-end">%s</td>' if numeric
+                            else '<td style="white-space: pre-wrap">%s</td>'
+                        ) % value)
+                return Markup("<tr>%s</tr>") % Markup("").join(cells)
+
+            return Markup(
+                '<div class="table-responsive"><table class="table table-sm table-striped table-bordered">'
+                '<thead><tr>%s</tr></thead><tbody>%s</tbody></table></div>'
+            ) % (
+                Markup("").join(Markup("<th>%s</th>") % header for header in headers),
+                Markup("").join(
+                    render_row(index, row) for index, row in enumerate(rows)
+                ) or Markup('<tr><td colspan="%s">%s</td></tr>') % (
+                    len(headers), _("Aucune ligne BOM renseignée."),
+                ),
+            )
+
+        for order in self:
+            details = []
+            groups, totals = order._bom_breakdown()
+            tube_quantity = sum(
+                totals.get(description, {}).get("quantity", 0.0)
+                for description in ("Partie de Smooth tube 16x19", "Smooth tube 16x19")
+            ) / 740.0
+            whole_pieces = math.floor(tube_quantity)
+            fraction = tube_quantity - whole_pieces
+            # Round half pieces up, allowing for floating-point calculation noise.
+            if math.isclose(fraction, 0.5, rel_tol=0.0, abs_tol=1e-9):
+                order.sap_tube_quantity = whole_pieces + 1
+            else:
+                order.sap_tube_quantity = whole_pieces + (fraction > 0.5)
+            fmt = lambda value: tools.formatLang(order.env, value, digits=3)
+            for name, components in groups.items():
+                for code, description, bom_qty, scrap_qty, quantity in components:
+                    details.append([
+                        (name, False), (code, False), (description or _("Sans description"), False),
+                        ("%s × %s" % (fmt(bom_qty), fmt(scrap_qty)), True), (fmt(quantity), True),
+                    ])
+            order.bom_detail_html = table(
+                [_("Nom/référence"), _("Référence composant"), _("Composant (description)"), _("Calcul"), _("Résultat")],
+                details, merge_names=True,
+            )
+            order.bom_totals_html = table(
+                [_("Référence composant"), _("Composant (description)"), _("Total")],
+                [[(", ".join(total["codes"]), False), (description or _("Sans description"), False),
+                  (fmt(total["quantity"]), True)] for description, total in totals.items()],
+            )
+
     total_length = fields.Float(
         string="Longueur totale (mm)",
         compute="_compute_totals",
@@ -217,7 +369,7 @@ class ArScrapOrder(models.Model):
     def _get_current_validators(self):
         self.ensure_one()
         if self.state == "sap_processing":
-            return self.user_id
+            return self.env["ar.scrap.sap.settings"]._get_validators()
         field_by_state = {
             "pending_supervisor": "supervisor_validator_ids",
             "pending_manager": "manager_validator_ids",
@@ -225,6 +377,27 @@ class ArScrapOrder(models.Model):
         }
         field_name = field_by_state.get(self.state)
         return self[field_name] if field_name else self.env["res.users"]
+
+    @api.depends_context("uid")
+    def _compute_is_current_user_sap_validator(self):
+        assigned = self.env.user in self.env["ar.scrap.sap.settings"]._get_validators()
+        for order in self:
+            order.is_current_user_sap_validator = assigned
+
+    @api.model
+    def _search_is_current_user_sap_validator(self, operator, value):
+        assigned = self.env.user in self.env["ar.scrap.sap.settings"]._get_validators()
+        if operator == "in":
+            matches = assigned in value
+        elif operator == "not in":
+            matches = assigned not in value
+        elif operator == "=":
+            matches = assigned == value
+        elif operator == "!=":
+            matches = assigned != value
+        else:
+            return NotImplemented
+        return [(1, "=", 1)] if matches else [(0, "=", 1)]
 
     def get_shift_label(self):
         self.ensure_one()
@@ -411,6 +584,7 @@ class ArScrapOrder(models.Model):
 
     def action_modify(self):
         self.ensure_one()
+        self._check_not_deleted()
         view = self.env.ref("ar_scrap.view_ar_scrap_modify_wizard_form")
         return {
             "type": "ir.actions.act_window",
@@ -426,6 +600,7 @@ class ArScrapOrder(models.Model):
 
     def action_reset_to_cart(self):
         self.ensure_one()
+        self._check_not_deleted()
         if self.state == "draft":
             raise ValidationError(_("Cette déclaration est déjà en brouillon."))
         original_declarant = self.user_id
@@ -588,6 +763,8 @@ class ArScrapOrder(models.Model):
     def create(self, vals_list):
         sequence = self.env["ir.sequence"]
         for vals in vals_list:
+            if vals.get("state") == "deleted" or {"deleted_by_id", "deleted_at"}.intersection(vals):
+                raise AccessError(_("Une suppression doit être effectuée avec l'action Supprimer."))
             vals["user_id"] = self.env.user.id
             if vals.get("name", _("Nouveau")) == _("Nouveau"):
                 vals["name"] = sequence.next_by_code("ar.scrap.order") or _("Nouveau")
@@ -969,6 +1146,7 @@ class ArScrapOrder(models.Model):
             source_order = self.browse(int(source_order_id)).exists()
             if not source_order:
                 raise ValidationError(_("La declaration a modifier est introuvable."))
+            source_order._check_not_deleted()
             if source_order.state == "draft" and source_order.user_id != self.env.user:
                 raise AccessError(_("Vous ne pouvez soumettre que vos propres brouillons."))
 

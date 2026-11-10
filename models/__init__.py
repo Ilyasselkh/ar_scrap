@@ -8,3 +8,4 @@ from . import scrap_production_order
 from . import scrap_product
 from . import scrap_zone
 from . import scrap_validation_rule
+from . import scrap_sap_settings

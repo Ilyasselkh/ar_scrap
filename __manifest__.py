@@ -14,6 +14,7 @@
         "views/scrap_zone_views.xml",
         "views/scrap_defect_type_views.xml",
         "views/scrap_validation_rule_views.xml",
+        "views/scrap_sap_settings_views.xml",
         "views/scrap_product_views.xml",
         "views/scrap_production_order_views.xml",
         "views/scrap_approval_wizard_views.xml",

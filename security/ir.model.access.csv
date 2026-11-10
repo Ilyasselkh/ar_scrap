@@ -29,3 +29,6 @@ access_ar_scrap_product_admin_unlink,ar.scrap.product admin unlink,model_ar_scra
 access_ar_scrap_production_order_admin_unlink,ar.scrap.production.order admin unlink,model_ar_scrap_production_order,base.group_system,0,0,0,1
 access_ar_scrap_validation_rule_admin_unlink,ar.scrap.validation.rule admin unlink,model_ar_scrap_validation_rule,base.group_system,0,0,0,1
 access_ar_scrap_zone_admin_unlink,ar.scrap.zone admin unlink,model_ar_scrap_zone,base.group_system,0,0,0,1
+access_ar_scrap_sap_settings_user,ar.scrap.sap.settings user,model_ar_scrap_sap_settings,base.group_user,1,0,0,0
+access_ar_scrap_sap_settings_manager,ar.scrap.sap.settings manager,model_ar_scrap_sap_settings,ar_scrap.group_ar_scrap_settings,1,1,1,0
+access_ar_scrap_sap_settings_admin_unlink,ar.scrap.sap.settings admin unlink,model_ar_scrap_sap_settings,base.group_system,0,0,0,1

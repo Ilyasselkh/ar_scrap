@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ar_scrap_sap_settings_list" model="ir.ui.view">
+        <field name="name">ar.scrap.sap.settings.list</field>
+        <field name="model">ar.scrap.sap.settings</field>
+        <field name="arch" type="xml">
+            <list string="Traitement SAP">
+                <field name="name"/>
+                <field name="validator_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_ar_scrap_sap_settings_form" model="ir.ui.view">
+        <field name="name">ar.scrap.sap.settings.form</field>
+        <field name="model">ar.scrap.sap.settings</field>
+        <field name="arch" type="xml">
+            <form string="Traitement SAP">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="validator_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        Sélectionnez une ou plusieurs personnes. Chacune peut confirmer le traitement SAP.
+                        Cette affectation s'applique également aux anciennes déclarations en attente de traitement SAP.
+                        Sans personne affectée, cette étape ne peut pas être validée.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_ar_scrap_sap_settings" model="ir.actions.act_window">
+        <field name="name">Traitement SAP</field>
+        <field name="res_model">ar.scrap.sap.settings</field>
+        <field name="view_mode">list,form</field>
+        <field name="group_ids" eval="[Command.link(ref('ar_scrap.group_ar_scrap_settings'))]"/>
+    </record>
+</odoo>

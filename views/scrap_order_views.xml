@@ -28,11 +28,15 @@
                     <button name="action_continue_draft" type="object" string="Continuer la saisie" icon="fa-pencil-square-o" class="btn-primary" invisible="not can_current_user_edit_draft"/>
                     <button name="action_approve" type="object" string="Valider" icon="fa-check" class="btn-success ar_scrap_approve_btn" invisible="not can_current_user_approve"/>
                     <button name="action_refuse" type="object" string="Refuser" icon="fa-times" class="btn-danger ar_scrap_refuse_btn" invisible="not can_current_user_approve"/>
-                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary" invisible="state == 'draft'"/>
-                    <button name="action_print_report" type="object" string="Imprimer le rapport" icon="fa-print" class="btn-secondary" invisible="state == 'draft'"/>
+                    <button name="action_modify" type="object" string="Modifier" icon="fa-pencil" class="btn-primary" invisible="state in ('draft', 'deleted')"/>
+                    <button name="action_export_xlsx" type="object" string="Exporter en Excel" icon="fa-download" class="btn-secondary"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,pending_supervisor,pending_manager,pending_md,sap_processing,validated,refused"/>
                 </header>
                 <sheet class="ar_scrap_order_sheet">
+                    <group string="Suppression" invisible="state != 'deleted'">
+                        <field name="deleted_by_id"/>
+                        <field name="deleted_at"/>
+                    </group>
                     <field name="can_current_user_approve" invisible="True"/>
                     <field name="can_current_user_edit_draft" invisible="True"/>
                     <field name="currency_id" invisible="True"/>
@@ -95,36 +99,54 @@
                         <field name="refusal_reason" nolabel="1" readonly="True"/>
                     </div>
 
-                    <div class="ar_scrap_section_header">
-                        <div><i class="fa fa-list-ul"/><span>Références scrapées</span></div>
-                        <small>Détail des quantités déclarées</small>
-                    </div>
-                    <field name="line_ids" nolabel="1" class="ar_scrap_order_lines">
-                        <list create="false" edit="false" delete="false">
-                            <field name="currency_id" column_invisible="True"/>
-                            <field name="product_name"/>
-                            <field name="product_description" optional="show"/>
-                            <field name="quantity" string="Quantité"/>
-                            <field name="total_amount" string="Montant total" widget="monetary"/>
-                            <field name="defect_type_name"/>
-                            <field name="defect_type_image" string="Image du défaut" widget="image" options="{'size': [48, 48]}" class="ar_scrap_defect_thumb"/>
-                            <field name="defect_comment" optional="show"/>
-                            <field name="lot" string="LOT" optional="show"/>
-                        </list>
-                    </field>
-
-                    <div class="ar_scrap_section_header ar_scrap_history_header">
-                        <div><i class="fa fa-check-square-o"/><span>Historique des validations</span></div>
-                        <small>Traçabilité des décisions</small>
-                    </div>
-                    <field name="approval_history_ids" nolabel="1" class="ar_scrap_approval_history">
-                        <list create="false" edit="false" delete="false">
-                            <field name="decision_date"/>
-                            <field name="level"/>
-                            <field name="validator_id"/>
-                            <field name="decision" widget="badge" decoration-success="decision == 'approved'" decoration-danger="decision == 'refused'"/>
-                        </list>
-                    </field>
+                    <notebook>
+                        <page string="Références scrapées" name="line_ids_tab">
+                            <field name="line_ids" nolabel="1" class="ar_scrap_order_lines">
+                                <list create="false" edit="false" delete="false">
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="product_name" string="Nom/référence"/>
+                                    <field name="product_description" optional="show"/>
+                                    <field name="quantity" string="Quantité"/>
+                                    <field name="total_amount" string="Montant total" widget="monetary"/>
+                                    <field name="defect_type_name"/>
+                                    <field name="defect_type_image" string="Image du défaut" widget="image" options="{'size': [48, 48]}" class="ar_scrap_defect_thumb"/>
+                                    <field name="defect_comment" optional="show"/>
+                                    <field name="lot" string="LOT" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Détail des calculs BOM" name="bom_detail_html_tab">
+                            <field name="bom_detail_html" widget="html" nolabel="1" readonly="True"/>
+                        </page>
+                        <page string="Totaux par composant" name="bom_totals_html_tab">
+                            <field name="bom_totals_html" widget="html" nolabel="1" readonly="True"/>
+                            <div class="mt-3 p-3 border rounded" style="background: #f2f9f8; border-left: 4px solid #008e8b !important;">
+                                <div class="fw-bold mb-2" style="font-size: 16px; color: #253044;">
+                                    Total de Tube à scraper sur SAP (Par pièce)
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <span style="font-size: 14px; color: #4c5869;">
+                                        (Partie de Smooth tube 16x19 + Smooth tube 16x19) / 740
+                                    </span>
+                                    <div class="d-flex align-items-baseline gap-2 fw-bold" style="font-size: 22px; color: #007570;">
+                                        <span>=</span>
+                                        <field name="sap_tube_quantity" readonly="True" nolabel="1" class="mb-0"/>
+                                        <span style="font-size: 14px;">pièce(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </page>
+                        <page string="Historique des validations" name="approval_history_ids_tab">
+                            <field name="approval_history_ids" nolabel="1" class="ar_scrap_approval_history">
+                                <list create="false" edit="false" delete="false">
+                                    <field name="decision_date"/>
+                                    <field name="level"/>
+                                    <field name="validator_id"/>
+                                    <field name="decision" widget="badge" decoration-success="decision == 'approved'" decoration-danger="decision == 'refused'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>
@@ -179,16 +201,37 @@
         <field name="search_view_id" ref="view_ar_scrap_order_search"/>
     </record>
 
+    <record id="view_ar_scrap_order_deleted_list" model="ir.ui.view">
+        <field name="name">ar.scrap.order.deleted.list</field>
+        <field name="model">ar.scrap.order</field>
+        <field name="arch" type="xml">
+            <list string="Déclarations supprimées" create="false" edit="false" delete="false" default_order="deleted_at desc,id desc">
+                <field name="name"/>
+                <field name="scrap_date"/>
+                <field name="user_id"/>
+                <field name="production_order_number"/>
+                <field name="deleted_by_id"/>
+                <field name="deleted_at"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="total_amount" widget="monetary"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_ar_scrap_order_deleted" model="ir.actions.act_window">
+        <field name="name">Supprimées</field>
+        <field name="res_model">ar.scrap.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_ar_scrap_order_deleted_list"/>
+        <field name="domain">[('state', '=', 'deleted')]</field>
+        <field name="search_view_id" ref="view_ar_scrap_order_search"/>
+    </record>
+
     <record id="action_ar_scrap_order_validation" model="ir.actions.act_window">
         <field name="name">Validations</field>
         <field name="res_model">ar.scrap.order</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[
-            '|', '|', '|',
-            '&amp;', ('user_id', '=', uid), ('state', 'in', ('pending_supervisor', 'pending_manager', 'pending_md', 'sap_processing')),
-            '&amp;', ('state', '=', 'pending_supervisor'), ('supervisor_validator_ids', 'in', [uid]),
-            '&amp;', ('state', '=', 'pending_manager'), ('manager_validator_ids', 'in', [uid]),
-            '&amp;', ('state', '=', 'pending_md'), ('md_validator_ids', 'in', [uid])
+            ('state', 'in', ('pending_supervisor', 'pending_manager', 'pending_md', 'sap_processing'))
         ]</field>
         <field name="search_view_id" ref="view_ar_scrap_order_search"/>
     </record>

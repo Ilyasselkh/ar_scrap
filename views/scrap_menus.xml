@@ -16,6 +16,7 @@
     </record>
     <menuitem id="menu_ar_scrap_archive_validated" name="Validées" parent="menu_ar_scrap_archive" action="action_ar_scrap_order_archive" sequence="10" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_archive_refused" name="Refusées" parent="menu_ar_scrap_archive" action="action_ar_scrap_order_refused" sequence="20" groups="base.group_user"/>
+    <menuitem id="menu_ar_scrap_archive_deleted" name="Supprimées" parent="menu_ar_scrap_archive" action="action_ar_scrap_order_deleted" sequence="30" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_documentation" name="Documentation" parent="menu_ar_scrap_root" action="action_ar_scrap_documentation" sequence="30" groups="base.group_user"/>
     <menuitem id="menu_ar_scrap_settings" name="Paramétrage" parent="menu_ar_scrap_root" sequence="40" groups="group_ar_scrap_settings"/>
     <record id="menu_ar_scrap_settings" model="ir.ui.menu">
@@ -26,6 +27,7 @@
     <menuitem id="menu_ar_scrap_zone" name="Zones de scrap" parent="menu_ar_scrap_settings" action="action_ar_scrap_zone" sequence="20" groups="group_ar_scrap_settings"/>
     <menuitem id="menu_ar_scrap_defect_type" name="Type de défaut" parent="menu_ar_scrap_settings" action="action_ar_scrap_defect_type" sequence="25" groups="group_ar_scrap_settings"/>
     <menuitem id="menu_ar_scrap_validation_rule" name="Règles de validation" parent="menu_ar_scrap_settings" action="action_ar_scrap_validation_rule" sequence="30" groups="group_ar_scrap_settings"/>
+    <menuitem id="menu_ar_scrap_sap_settings" name="Traitement SAP" parent="menu_ar_scrap_settings" action="action_ar_scrap_sap_settings" sequence="35" groups="group_ar_scrap_settings"/>
 
     <!-- Command.set remplace les anciens groupes conservés lors des mises à jour du module. -->
     <record id="menu_ar_scrap_production_order" model="ir.ui.menu">

@@ -250,7 +250,39 @@
 .ar_scrap_order_lines,
 .ar_scrap_approval_history { display: block; overflow: hidden; border: 1px solid #e0e5ec; border-radius: 12px; background: #fff; box-shadow: 0 6px 16px rgba(31, 43, 59, .04); }
 .ar_scrap_order_form .o_list_table thead { background: #f0f3f7; }
-.ar_scrap_order_form .o_list_table thead th { color: #556173; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ar_scrap_order_form .o_notebook {
+    .ar_scrap_order_lines, .ar_scrap_approval_history {
+        width: 100%;
+        max-width: 100%;
+        margin-inline: 0 !important;
+
+        .o_list_renderer {
+            // Keep the notebook's negative list margins inside our bordered card.
+            margin: 0 !important;
+            --ListRenderer-margin-x: 0px;
+            --ListRenderer-table-padding-x: 12px;
+            overflow-x: auto;
+        }
+
+        .o_list_table {
+            width: 100%;
+            margin-bottom: 0;
+            thead th {
+                padding: 10px 12px;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #39485c;
+                background: #f0f3f7;
+            }
+            .o_data_row > td {
+                padding: 9px 12px;
+                font-size: 15px;
+                line-height: 1.45;
+                vertical-align: middle;
+            }
+        }
+    }
+}
 .ar_scrap_order_form .o_list_table tbody tr:hover { background: #f5fbfb; }
 .ar_scrap_order_form .o-mail-Chatter { max-width: none; width: calc(100% - 32px); margin: 18px auto 30px; border: 1px solid #e0e5ec; border-radius: 14px; background: #fff; box-shadow: 0 10px 28px rgba(31, 43, 59, .06); }
 /* Responsive layout: ultra-wide screens */
